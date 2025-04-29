@@ -1,4 +1,4 @@
-package com.billing;
+package com.vo;
 
 public class CustomerDetails
 {

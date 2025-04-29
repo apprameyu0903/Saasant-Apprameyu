@@ -1,4 +1,4 @@
-package com.billing;
+package com.vo;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
