@@ -21,7 +21,7 @@ public class Invoice
                    LocalDate dueDate, LocalDateTime dateTime) {
         this.merchantDetails = merchantDetails;
         this.customerDetails = customerDetails;
-        this.productDetailsList = new ArrayList<>();
+        this.productDetailsList = productDetailsList;
         this.subTotal = subTotal;
         this.gst = gst;
         this.grandTotal = grandTotal;
@@ -106,4 +106,36 @@ public class Invoice
                 ", dateTime=" + dateTime +
                 '}';
     }
+
+    public void printInvoice() {
+        System.out.println("\n============================ INVOICE ==============================");
+        System.out.println("Merchant: " + merchantDetails.getMerchantName());
+        System.out.println("Customer: " + customerDetails.getCustomerName());
+        System.out.println("Customer ID: " + customerDetails.getCustomerId());
+        System.out.println("Customer Mobile Number: " + customerDetails.getMobileNumber());
+        System.out.println("Date: " + dateTime);
+        System.out.println("Due Date: " + dueDate);
+        System.out.println("--------------------------------------------------------------------");
+        System.out.println("ID        Description               Price     Quantity  Tax(%)   Total Price");
+        System.out.println("--------------------------------------------------------------------");
+
+        for (ProductInfo product : productDetailsList) {
+            String line = product.getProductId() + "    " +
+                    String.format("%-25s", product.getProductDescription()) +
+                    "₹" + String.format("%-9.2f", product.getUnitPrice()) + " " +
+                    String.format("%-9d", product.getQuantity()) +
+                    String.format("%-8.2f", product.getTax()) + "% " +
+                    "₹" + String.format("%.2f", product.getTotalAmount());
+            System.out.println(line);
+        }
+
+        System.out.println("--------------------------------------------------------------------");
+        System.out.println(String.format("%-55s ₹%.2f", "Subtotal:", subTotal));
+        System.out.println(String.format("%-55s ₹%.2f", "GST (18%):", gst));
+        System.out.println(String.format("%-55s ₹%.2f", "Grand Total:", grandTotal));
+        System.out.println("====================================================================");
+    }
+
 }
+
+

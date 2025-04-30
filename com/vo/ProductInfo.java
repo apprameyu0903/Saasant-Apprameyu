@@ -5,18 +5,24 @@ public class ProductInfo {
     private String productId;
     private String productDescription;
     private float unitPrice;
-    private float totalAmount;
+    private float tax;
+    private int quantity;
 
 
-    public ProductInfo(String productId, String productDescription, float unitPrice, float totalAmount)
+    public ProductInfo(String productId, String productDescription, float unitPrice, float tax) {
+        this(productId, productDescription, unitPrice, tax, 1); // default quantity = 1
+    }
+
+    public ProductInfo(String productId, String productDescription, float unitPrice, float tax, int quantity)
     {
 
         this.productId = productId;
         this.productDescription = productDescription;
         this.unitPrice = unitPrice;
-        this.totalAmount = totalAmount;
-
+        this.tax = tax;
+        this.quantity = quantity;
     }
+
 
     public String getProductId() {
         return productId;
@@ -42,21 +48,27 @@ public class ProductInfo {
         this.unitPrice = unitPrice;
     }
 
+    public float getTax() {
+        return tax;
+    }
+
+    public void setTax(float tax) {
+        this.tax = tax;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
     public float getTotalAmount() {
-        return totalAmount;
+        float taxAmount = unitPrice * (tax / 100);  // Tax is calculated as a percentage
+        return (unitPrice + taxAmount) * quantity;  // Total amount = (Unit price + Tax) * Quantity
     }
 
-    public void setTotalAmount(float totalAmount) {
-        this.totalAmount = totalAmount;
-    }
 
-    @Override
-    public String toString() {
-        return "ProductInfo{" +
-                "productId='" + productId + '\'' +
-                ", productDescription='" + productDescription + '\'' +
-                ", unitPrice=" + unitPrice +
-                ", totalAmount=" + totalAmount +
-                '}';
-    }
+
 }
