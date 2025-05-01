@@ -109,32 +109,37 @@ public class Invoice
 
     public void printInvoice() {
         System.out.println("\n============================ INVOICE ==============================");
-        System.out.println("Merchant: " + merchantDetails.getMerchantName());
-        System.out.println("Customer: " + customerDetails.getCustomerName());
-        System.out.println("Customer ID: " + customerDetails.getCustomerId());
-        System.out.println("Customer Mobile Number: " + customerDetails.getMobileNumber());
-        System.out.println("Date: " + dateTime);
-        System.out.println("Due Date: " + dueDate);
+        System.out.println("Merchant          : " + merchantDetails.getMerchantName());
+        System.out.println("Customer          : " + customerDetails.getCustomerName());
+        System.out.println("Customer ID       : " + customerDetails.getCustomerId());
+        System.out.println("Mobile Number     : " + customerDetails.getMobileNumber());
+        System.out.println("Date              : " + dateTime);
+        System.out.println("Due Date          : " + dueDate);
         System.out.println("--------------------------------------------------------------------");
-        System.out.println("ID        Description               Price     Quantity  Tax(%)   Total Price");
+        System.out.printf("%-10s %-25s %-10s %-10s %-8s %-12s %-12s%n",
+                "ID", "Description", "Price", "Quantity", "Tax(%)", "Tax Amt (₹)", "Total (₹)");
         System.out.println("--------------------------------------------------------------------");
 
         for (ProductInfo product : productDetailsList) {
-            String line = product.getProductId() + "    " +
-                    String.format("%-25s", product.getProductDescription()) +
-                    "₹" + String.format("%-9.2f", product.getUnitPrice()) + " " +
-                    String.format("%-9d", product.getQuantity()) +
-                    String.format("%-8.2f", product.getTax()) + "% " +
-                    "₹" + String.format("%.2f", product.getTotalAmount());
-            System.out.println(line);
+            double taxAmount = product.getUnitPrice() * product.getQuantity() * (product.getTax() / 100.0);
+
+            System.out.printf("%-10s %-25s ₹%-9.2f %-10d %-8.2f ₹%-11.2f ₹%.2f%n",
+                    product.getProductId(),
+                    product.getProductDescription(),
+                    product.getUnitPrice(),
+                    product.getQuantity(),
+                    product.getTax(),
+                    taxAmount,
+                    product.getTotalAmount());
         }
 
         System.out.println("--------------------------------------------------------------------");
-        System.out.println(String.format("%-55s ₹%.2f", "Subtotal:", subTotal));
-        System.out.println(String.format("%-55s ₹%.2f", "GST (18%):", gst));
-        System.out.println(String.format("%-55s ₹%.2f", "Grand Total:", grandTotal));
+        System.out.printf("%-65s ₹%.2f%n", "Subtotal:", subTotal);
+        System.out.printf("%-65s ₹%.2f%n", "GST (18%):", gst);
+        System.out.printf("%-65s ₹%.2f%n", "Grand Total:", grandTotal);
         System.out.println("====================================================================");
     }
+
 
 }
 
