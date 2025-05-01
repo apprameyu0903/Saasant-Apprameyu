@@ -23,7 +23,7 @@ public class BillingSystemMain {
         String newProductId = sc.nextLine();
         System.out.print("Enter Product Description: ");
         String newProductDescription = sc.nextLine();
-        System.out.print("Enter Unit Price: ₹");
+        System.out.print("Enter Unit Price: %");
         float newUnitPrice = sc.nextFloat();
         System.out.print("Enter Tax: ₹");
         float newTax = sc.nextFloat();
@@ -34,7 +34,7 @@ public class BillingSystemMain {
         System.out.println("Product added successfully!");
     }
 
-    public void billingSystem(){
+    /*public void billingSystem(){
 
         System.out.print("Enter Customer ID: ");
         String customerId = sc.nextLine();
@@ -122,6 +122,87 @@ public class BillingSystemMain {
                     String.format("%.2f", p.getTax()) + "%";
             System.out.println(line);
         }
+    }*/
+
+    public void billingSystem() {
+        System.out.print("Enter Customer ID: ");
+        String customerId = sc.nextLine();
+
+        CustomerDetails customer = customerDatabase.computeIfAbsent(customerId, id -> {
+            System.out.print("Enter Customer Name: ");
+            String name = sc.nextLine();
+            System.out.print("Enter Customer Mobile No.: ");
+            String mobile = sc.nextLine();
+            while (mobile.length() < 10) {
+                System.out.print("Please enter a valid 10-digit mobile number: ");
+                mobile = sc.nextLine();
+            }
+            System.out.println("✅ New customer added.");
+            return new CustomerDetails(id, name, mobile);
+        });
+
+        if (customerDatabase.containsKey(customerId)) {
+            System.out.println("✔️ Existing customer found: " + customer.getCustomerName() + " (" + customer.getMobileNumber() + ")");
+        }
+
+        while (true) {
+            System.out.print("Enter Product ID: ");
+            String productId = sc.nextLine();
+
+            Optional.ofNullable(productCatalog.get(productId)).ifPresentOrElse(product -> {
+                System.out.print("Enter Quantity: ");
+                int quantity = sc.nextInt();
+                sc.nextLine();
+
+                ProductInfo billedProduct = new ProductInfo(
+                        product.getProductId(),
+                        product.getProductDescription(),
+                        product.getUnitPrice(),
+                        product.getTax()
+                );
+                billedProduct.setQuantity(quantity);
+                products.add(billedProduct);
+                System.out.println("Product added successfully!");
+            }, () -> {
+                System.out.println("⚠️ Product not found!");
+            });
+
+            System.out.print("Do you want to add another product? (Y/N): ");
+            String addMore = sc.nextLine();
+            if (!addMore.equalsIgnoreCase("Y")) break;
+        }
+
+        float subTotal = (float) products.stream().mapToDouble(ProductInfo::getTotalAmount).sum();
+
+        float gst = subTotal * 0.18f;
+        float grandTotal = subTotal + gst;
+
+        Invoice invoice = new Invoice(
+                merchant,
+                customer,
+                products,
+                subTotal,
+                gst,
+                grandTotal,
+                LocalDate.now().plusDays(30),
+                LocalDateTime.now()
+        );
+        invoice.printInvoice();
+    }
+
+    public void printProductCatalog() {
+        System.out.println("\nProduct Catalog:");
+        System.out.println("ID        Description               Price     Tax(%)");
+        System.out.println("-------------------------------------------------------");
+
+        productCatalog.values().stream()
+                .forEach(p -> {
+                    String line = p.getProductId() + "    " +
+                            String.format("%-25s", p.getProductDescription()) +
+                            "₹" + String.format("%.2f", p.getUnitPrice()) + "   " +
+                            String.format("%.2f", p.getTax()) + "%";
+                    System.out.println(line);
+                });
     }
 
     public static void main(String[] args) {
@@ -132,7 +213,7 @@ public class BillingSystemMain {
         productCatalog.put("P004", new ProductInfo("P004", "Shirt Fabric", 500.00f, 5f));
         productCatalog.put("P005", new ProductInfo("P005", "Kurti", 1000.00f, 3f));
 
-        int choice;
+        /*int choice;
         do {
             System.out.println("\n--- Main Menu ---");
             System.out.println("1. Update the Product Catalog");
@@ -161,7 +242,29 @@ public class BillingSystemMain {
                     break;
             }
 
+        } while (choice != 4);*/
+
+        Map<Integer, Runnable> menuOptions = new HashMap<>();
+        menuOptions.put(1, bc::addProducts);
+        menuOptions.put(2, bc::billingSystem);
+        menuOptions.put(3, bc::printProductCatalog);
+
+        int choice;
+        do {
+            System.out.println("\n--- Main Menu ---");
+            System.out.println("1. Update the Product Catalog");
+            System.out.println("2. Billing System");
+            System.out.println("3. Print Product Catalog");
+            System.out.println("4. Exit");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+
+            menuOptions.getOrDefault(choice, () -> System.out.println("Invalid choice. Please try again.")).run();
+
         } while (choice != 4);
+
+        System.out.println("Exiting... Goodbye!");
 
         sc.close();
     }

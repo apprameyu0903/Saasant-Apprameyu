@@ -134,10 +134,11 @@ public class Invoice
         }
 
         System.out.println("--------------------------------------------------------------------");
-        System.out.printf("%-65s ₹%.2f%n", "Subtotal:", subTotal);
-        System.out.printf("%-65s ₹%.2f%n", "GST (18%):", gst);
-        System.out.printf("%-65s ₹%.2f%n", "Grand Total:", grandTotal);
+        System.out.printf("Subtotal   : ₹%.2f%n", subTotal);
+        System.out.printf("GST (18%%)  : ₹%.2f%n", gst);
+        System.out.printf("Grand Total: ₹%.2f%n", grandTotal);
         System.out.println("====================================================================");
+
     }
 
 
