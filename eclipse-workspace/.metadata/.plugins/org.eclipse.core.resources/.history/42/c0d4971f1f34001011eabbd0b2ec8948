@@ -1,0 +1,214 @@
+package com.saasant.firstSpringProject.service;
+
+import com.saasant.firstSpringProject.dao.CustomerDao;
+import com.saasant.firstSpringProject.vo.CustomerDetails;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class CustomerServiceTest {
+
+    @Mock
+    private CustomerDao customerDao; // Mocking the DAO layer
+
+    @InjectMocks
+    private CustomerService customerService; // Injecting mocks into CustomerService
+
+    private CustomerDetails customer1;
+    private CustomerDetails customer2;
+
+    @BeforeEach
+    void setUp() {
+        // Initialize common test data
+        customer1 = new CustomerDetails("C001", "Alice Wonderland", "1234567890", "Fantasy Land");
+        customer2 = new CustomerDetails("C002", "Bob The Builder", "0987654321", "Construction City");
+    }
+
+    @Test
+    void testAddCustomer_Success() {
+        // Arrange
+        when(customerDao.addCustomer(any(CustomerDetails.class))).thenReturn(true);
+        when(customerDao.getCustomerById(customer1.getCustomerId())).thenReturn(customer1);
+
+        // Act
+        CustomerDetails addedCustomer = customerService.addCustomer(customer1);
+
+        // Assert
+        assertNotNull(addedCustomer);
+        assertEquals("Alice Wonderland", addedCustomer.getCustomerName());
+        verify(customerDao, times(1)).addCustomer(customer1);
+        verify(customerDao, times(1)).getCustomerById(customer1.getCustomerId());
+    }
+
+    @Test
+    void testAddCustomer_Failure_DaoReturnsFalse() {
+        // Arrange
+        when(customerDao.addCustomer(any(CustomerDetails.class))).thenReturn(false);
+
+        // Act
+        CustomerDetails addedCustomer = customerService.addCustomer(customer1);
+
+        // Assert
+        assertNull(addedCustomer);
+        verify(customerDao, times(1)).addCustomer(customer1);
+        verify(customerDao, never()).getCustomerById(anyString()); // Ensure getCustomerById is not called if add fails
+    }
+
+
+    @Test
+    void testGetCustomerById_Found() {
+        // Arrange
+        when(customerDao.getCustomerById("C001")).thenReturn(customer1);
+
+        // Act
+        CustomerDetails foundCustomer = customerService.getCustomerById("C001");
+
+        // Assert
+        assertNotNull(foundCustomer);
+        assertEquals("C001", foundCustomer.getCustomerId());
+        verify(customerDao, times(1)).getCustomerById("C001");
+    }
+
+    @Test
+    void testGetCustomerById_NotFound() {
+        // Arrange
+        when(customerDao.getCustomerById("C999")).thenReturn(null);
+
+        // Act
+        CustomerDetails foundCustomer = customerService.getCustomerById("C999");
+
+        // Assert
+        assertNull(foundCustomer);
+        verify(customerDao, times(1)).getCustomerById("C999");
+    }
+
+    @Test
+    void testGetAllCustomers_Success() {
+        // Arrange
+        List<CustomerDetails> customers = new ArrayList<>();
+        customers.add(customer1);
+        customers.add(customer2);
+        when(customerDao.getAllCustomers()).thenReturn(customers);
+
+        // Act
+        List<CustomerDetails> result = customerService.getAllCustomers();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("Alice Wonderland", result.get(0).getCustomerName());
+        verify(customerDao, times(1)).getAllCustomers();
+    }
+
+    @Test
+    void testGetAllCustomers_Empty() {
+        // Arrange
+        when(customerDao.getAllCustomers()).thenReturn(new ArrayList<>());
+
+        // Act
+        List<CustomerDetails> result = customerService.getAllCustomers();
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(customerDao, times(1)).getAllCustomers();
+    }
+
+
+    @Test
+    void testUpdateCustomer_Success() {
+        // Arrange
+        CustomerDetails updatedInfo = new CustomerDetails(null, "Alice Wonderland Updated", "1112223330", "New Location");
+        // The customerId is set within the service method after fetching the existing one.
+        // The DAO's updateCustomer method expects the customerId to be set in the CustomerDetails object.
+
+        when(customerDao.getCustomerById("C001")).thenReturn(customer1); // Simulate finding the existing customer
+        when(customerDao.updateCustomer(any(CustomerDetails.class))).thenReturn(true);
+        // After successful update, the service fetches the updated customer again
+        when(customerDao.getCustomerById("C001")).thenReturn(
+            new CustomerDetails("C001", "Alice Wonderland Updated", "1112223330", "New Location")
+        );
+
+
+        // Act
+        CustomerDetails result = customerService.updateCustomer("C001", updatedInfo);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("C001", result.getCustomerId());
+        assertEquals("Alice Wonderland Updated", result.getCustomerName());
+        assertEquals("New Location", result.getCustomerLocation());
+        verify(customerDao, times(2)).getCustomerById("C001"); // Once to check existence, once to return updated
+        verify(customerDao, times(1)).updateCustomer(any(CustomerDetails.class));
+    }
+    
+    @Test
+    void testUpdateCustomer_NotFound() {
+        // Arrange
+        CustomerDetails updatedInfo = new CustomerDetails(null, "Non Existent", "1112223330", "New Location");
+        when(customerDao.getCustomerById("C999")).thenReturn(null);
+
+        // Act
+        CustomerDetails result = customerService.updateCustomer("C999", updatedInfo);
+
+        // Assert
+        assertNull(result);
+        verify(customerDao, times(1)).getCustomerById("C999");
+        verify(customerDao, never()).updateCustomer(any(CustomerDetails.class));
+    }
+
+    @Test
+    void testUpdateCustomer_DaoUpdateFails() {
+        // Arrange
+        CustomerDetails updatedInfo = new CustomerDetails(null, "Alice Wonderland Updated", "1112223330", "New Location");
+        when(customerDao.getCustomerById("C001")).thenReturn(customer1); // Existing customer found
+        when(customerDao.updateCustomer(any(CustomerDetails.class))).thenReturn(false); // DAO update fails
+
+        // Act
+        CustomerDetails result = customerService.updateCustomer("C001", updatedInfo);
+
+        // Assert
+        assertNull(result); // Should return null if DAO update fails
+        verify(customerDao, times(1)).getCustomerById("C001");
+        verify(customerDao, times(1)).updateCustomer(any(CustomerDetails.class));
+    }
+
+    @Test
+    void testDeleteCustomer_Success() {
+        // Arrange
+        when(customerDao.deleteCustomer("C001")).thenReturn(true);
+
+        // Act
+        customerService.deleteCustomer("C001"); // Assuming it prints to console, void return
+
+        // Assert
+        // Verify that the deleteCustomer method of the DAO was called once with "C001"
+        verify(customerDao, times(1)).deleteCustomer("C001");
+        // Add assertions for console output if you capture it, or verify other side effects
+    }
+    
+    @Test
+    void testDeleteCustomer_Failure() {
+        // Arrange
+        when(customerDao.deleteCustomer("C999")).thenReturn(false);
+
+        // Act
+        customerService.deleteCustomer("C999");
+
+        // Assert
+        verify(customerDao, times(1)).deleteCustomer("C999");
+        // Add assertions for console output if you capture it
+    }
+}

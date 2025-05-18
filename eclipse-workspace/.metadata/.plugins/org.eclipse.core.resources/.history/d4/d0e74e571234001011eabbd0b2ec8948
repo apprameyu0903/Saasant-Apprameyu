@@ -1,0 +1,47 @@
+package com.saasant.firstSpringProject.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.ui.Model;
+
+@Controller
+public class ViewController {
+
+    /**
+     * Handles requests to the root or /customers path and displays the customer_details page.
+     * This page will be responsible for listing customers and initiating add/edit/delete operations.
+     *
+     * @param model The Spring Model to add attributes to, for the view.
+     * @param successMessage Optional success message to display on the page.
+     * @param errorMessage Optional error message to display on the page.
+     * @return The name of the Thymeleaf template to render (customer_details).
+     */
+    @GetMapping({"/", "/customers"})
+    public String showCustomerDetailsPage(Model model,
+                                          @RequestParam(value = "successMessage", required = false) String successMessage,
+                                          @RequestParam(value = "errorMessage", required = false) String errorMessage) {
+        if (successMessage != null && !successMessage.isEmpty()) {
+            model.addAttribute("successMessage", successMessage);
+        }
+        if (errorMessage != null && !errorMessage.isEmpty()) {
+            model.addAttribute("errorMessage", errorMessage);
+        }
+        // The customer_details.html page uses AJAX to load customer data via the CustomerController.
+        // So, we don't need to explicitly pass the customer list here.
+        return "customer_details"; // Returns customer_details.html
+    }
+
+    /**
+     * Handles requests to show the add_customer page.
+     * This is a simplified version, assuming add_customer.html is a standalone form.
+     * If it needs to interact with the CustomerController for adding,
+     * the form submission would go to an endpoint in CustomerController.
+     *
+     * @return The name of the Thymeleaf template to render (add_customer).
+     */
+    @GetMapping("/customers/add")
+    public String showAddCustomerPage() {
+        return "add_customer"; // Returns add_customer.html
+    }
+}

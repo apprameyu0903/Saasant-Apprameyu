@@ -15,4 +15,7 @@
     <fullyQualifiedTypeName name="com.saasant.firstSpringProject.vo.CustomerDetails"/>
     <fullyQualifiedTypeName name="com.saasant.firstSpringProject.vo.ProductInfo"/>
     <fullyQualifiedTypeName name="org.springframework.web.bind.annotation.CrossOrigin"/>
+    <fullyQualifiedTypeName name="org.springframework.stereotype.Repository"/>
+    <fullyQualifiedTypeName name="org.springframework.stereotype.Service"/>
+    <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
 </qualifiedTypeNameHistroy>

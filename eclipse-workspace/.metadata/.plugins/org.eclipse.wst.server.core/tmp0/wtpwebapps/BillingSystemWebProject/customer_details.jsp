@@ -6,7 +6,6 @@
     <meta charset="UTF-8">
     <title>Customer List</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <%-- Link to your existing style.css if it's not already included via Bootstrap or if it has specific styles you need --%>
     <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
@@ -123,7 +122,6 @@
 
     
     <script>
-    // API endpoint for customer data
     const API_BASE_URL = 'http://localhost:8081/api/customers';
 
     $(document).ready(initializePage);
@@ -201,30 +199,31 @@
     }
 
     function fillCustomerTable(customersList) {
-        console.log(customersList);
-        var tableBodyElement = $("#customerTable tbody");
+        console.log("Data received by fillCustomerTable:", JSON.parse(JSON.stringify(customersList)));
+        const tableBodyElement = $("#customerTable tbody");
         tableBodyElement.empty();
 
         if (customersList && customersList.length > 0) {
             $("#noResultsRow").hide();
-            customersList.forEach(function(oneCustomer) {
-                console.log(oneCustomer);
-                var displayId = oneCustomer.customerId;
-                console.log(displayId);
-                var displayName = oneCustomer.customerName;
-                var displayMobile = oneCustomer.mobileNumber;
-                var displayLocation = oneCustomer.customerLocation;
-                var tableRowHtml = `
-                    <tr id="customerRow-${oneCustomer.customerId}"> 
-                        <td>`+displayId+`</td>
-                        <td class="name">${displayName}</td>
-                        <td class="mobile">${displayMobile}</td>
-                        <td class="location">${displayLocation}</td>
-                        <td>
-                            <a class="action-link edit-link text-primary mr-2" href="#" data-id="${oneCustomer.customerId}">Edit</a>
-                            <a class="action-link delete-link text-danger" href="#" data-id="${oneCustomer.customerId}">Delete</a>
-                        </td>
-                    </tr>`;
+            customersList.forEach(function(oneCustomer, index) {
+                console.log('Populating row for customer at index ' + index + ':', JSON.parse(JSON.stringify(oneCustomer)));
+
+                const displayId = oneCustomer.customerId;
+                const displayName = oneCustomer.customerName;
+                const displayMobile = oneCustomer.mobileNumber;
+                const displayLocation = oneCustomer.customerLocation;
+                
+                var tableRowHtml = '<tr id="customerRow-' + (oneCustomer.customerId || 'temp-id-' + index) + '">'; // Use actual ID or a temp one
+                tableRowHtml += '<td>' + displayId + '</td>';
+                tableRowHtml += '<td class="name">' + displayName + '</td>';
+                tableRowHtml += '<td class="mobile">' + displayMobile + '</td>';
+                tableRowHtml += '<td class="location">' + displayLocation + '</td>';
+                tableRowHtml += '<td>';
+                tableRowHtml += '<a class="action-link edit-link text-primary mr-2" href="#" data-id="' + oneCustomer.customerId + '">Edit</a>';
+                tableRowHtml += '<a class="action-link delete-link text-danger" href="#" data-id="' + oneCustomer.customerId + '">Delete</a>';
+                tableRowHtml += '</td>';
+                tableRowHtml += '</tr>';
+                
                 tableBodyElement.append(tableRowHtml);
             });
         } else {
@@ -292,28 +291,43 @@
     function handleDeleteLinkClick(event) {
         event.preventDefault();
         const customerIdToDelete = $(this).data("id");
+        console.log("Delete button clicked. Customer ID from data-id:", customerIdToDelete, "(type: " + typeof customerIdToDelete + ")");
         const customerName = $(this).closest("tr").find(".name").text();
 
-        if (confirm(`Are you sure you want to delete customer: ${customerName} (ID: ${customerIdToDelete})?`)) {
+        if (!customerIdToDelete || String(customerIdToDelete).toLowerCase() === "null" || String(customerIdToDelete).toLowerCase() === "undefined" || String(customerIdToDelete).trim() === "") {
+            showAlertRevised("Cannot delete: Customer ID is missing or invalid.", "danger");
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete customer: ` + customerName + ` (ID: ` + customerIdToDelete+ `)?`)) {
+            console.log("Proceeding to delete customer ID:", customerIdToDelete);
+
+            const deleteUrl = API_BASE_URL + `/` + customerIdToDelete; 
+            console.log("AJAX Delete URL being called:", deleteUrl); 
+
             $.ajax({
-                url: `${API_BASE_URL}/${customerIdToDelete}`,
+                url: deleteUrl, 
                 type: "DELETE",
                 success: function(response, status, xhr) {
+                    console.log("Delete successful for ID:", customerIdToDelete, "Status:", status);
                     $("#customerRow-" + customerIdToDelete).remove();
-                    showAlertRevised(`Customer ${customerName} deleted successfully.`, "success");
+                    showAlertRevised(`Customer ${customerName} (ID: ${customerIdToDelete}) deleted successfully.`, "success");
                     if ($("#customerTable tbody tr:not(#noResultsRow)").length === 0) {
                          showNoResultsMessage("No customers available.");
                     }
                 },
                 error: function(xhr) {
-                    console.error("Delete error:", xhr.status, xhr.responseText);
+                    console.error("Delete error for ID:", customerIdToDelete, "Status:", xhr.status, "Response:", xhr.responseText);
                     let errorMsg = "Could not delete the customer.";
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                    if (xhr.responseJSON && xhr.responseJSON.message) { 
                         errorMsg = xhr.responseJSON.message;
                     } else if (xhr.status === 404) {
-                        errorMsg = "Customer not found for deletion.";
-                    } else if (xhr.statusText) {
-                         errorMsg += " Server responded: " + xhr.statusText;
+                        errorMsg = "Customer not found for deletion (404).";
+                    } else if (xhr.status === 405) { 
+                        errorMsg = "Method Not Allowed (405). The server endpoint does not support DELETE or the URL is incorrect.";
+                    }
+                     else if (xhr.statusText) { 
+                         errorMsg += " Server responded: " + xhr.statusText + " (Status: " + xhr.status + ")";
                     }
                     showAlertRevised(errorMsg, "danger");
                 }
@@ -325,8 +339,8 @@
         event.preventDefault();
         const customerIdToEdit = $(this).data("id");
         $.ajax({
-            url: `${API_BASE_URL}/${customerIdToEdit}`, 
-            type: "PUT",
+            url: API_BASE_URL + `/`+ customerIdToEdit, 
+            type: "GET",
             dataType: "json",
             success: function(customerDataFromServer) {
                 if (customerDataFromServer && customerDataFromServer.customerId) {
@@ -360,7 +374,7 @@
         };
 
         $.ajax({
-            url: `${API_BASE_URL}/${customerId}`,
+            url: API_BASE_URL + `/` + customerId,
             type: "PUT",
             contentType: "application/json",    
             data: JSON.stringify(customerData), 

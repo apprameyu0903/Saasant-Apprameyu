@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Customer</title>
+        <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+         <div class="page-header">
+             <h1 class="header-title">Billing System</h1>
+         </div>
+         <div class="content-wrapper">
+            <div class="title-section">
+                 <h2 class="page-title">Add New Customer</h2>
+            </div>
+
+            <div id="alertPlaceholder" style="margin-bottom: 15px;"></div>
+
+            <div th:if="${errorMessage != null and !#strings.isEmpty(errorMessage)}"
+                 class="alert alert-danger alert-dismissible fade show" role="alert">
+                Error: <span th:text="${errorMessage}"></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form th:action="@{/CustomerServlet}" method="post" class="customer-form" id="addCustomerForm">
+                <input type="hidden" name="action" value="add"/>
+
+                <div class="form-group">
+                    <label for="customerId" class="form-label">Customer ID:</label>
+                    <input type="text" id="customerId" name="customerId" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerName" class="form-label">Customer Name:</label>
+                    <input type="text" id="customerName" name="customerName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="mobileNumber" class="form-label">Mobile Number:</label>
+                    <input type="tel" id="mobileNumber" name="mobileNumber" class="form-input" required pattern="[0-9]{10,15}" title="Enter a 10 to 15-digit mobile number">
+                </div>
+                 <div class="form-group">
+                    <label for="customerLocation" class="form-label">Location:</label>
+                    <input type="text" id="customerLocation" name="customerLocation" class="form-input">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Add Customer</button>
+                    <button type="reset" class="reset-btn">Reset</button>
+                    <a th:href="@{/customers}" class="cancel-btn-link"><button type="button" class="cancel-btn">Cancel</button></a>
+                </div>
+            </form>
+        </div>
+        <footer class="page-footer">
+             &copy; <span th:text="${#dates.year(#dates.createNow())}"></span> Billing System
+        </footer>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+        // API endpoint for customer operations
+        const API_BASE_URL = /*[[@{/api/customers}]]*/ 'http://localhost:8081/api/customers'; // Using Thymeleaf to make it context-aware (optional)
+
+        $(document).ready(function() {
+            $('#addCustomerForm').on('submit', function(event) {
+                event.preventDefault();
+                const customerData = {
+                    customerId: $('#customerId').val().trim(),
+                    customerName: $('#customerName').val().trim(),
+                    mobileNumber: $('#mobileNumber').val().trim(),
+                    customerLocation: $('#customerLocation').val().trim()
+                };
+                if (!customerData.customerId || !customerData.customerName || !customerData.mobileNumber) {
+                    showAlert('Customer ID, Name, and Mobile Number are required.', 'warning'); // Bootstrap 'warning' class
+                    return;
+                }
+
+                console.log("Submitting customer data:", customerData);
+                $.ajax({
+                    url: API_BASE_URL,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(customerData),
+                    dataType: 'json',
+                    success: function(response, textStatus, jqXHR) {
+                        console.log("Customer added successfully:", response);
+                        // Assuming response has customerName
+                        showAlert('Customer "' + (response.customerName || customerData.customerName) + '" added successfully!', 'success'); // Bootstrap 'success'
+                        $('#addCustomerForm')[0].reset();
+                        $('#customerId').focus();
+                         // Optionally redirect or update UI further
+                        // window.location.href = /*[[@{/customers}]]*/ '/customers'; // Example redirect
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("Error adding customer:", jqXHR.status, jqXHR.responseText, errorThrown);
+                        let errorMessage = 'Error adding customer. Please try again.';
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                            errorMessage = jqXHR.responseJSON.message;
+                        } else if (jqXHR.status === 400) { // Bad Request
+                            try {
+                                const errData = JSON.parse(jqXHR.responseText);
+                                if(errData && errData.message) {
+                                    errorMessage = errData.message;
+                                } else if (errData && typeof errData === 'object') { // Handle Spring Validation errors (often an object)
+                                    let messages = [];
+                                    for (const key in errData) {
+                                        if (errData.hasOwnProperty(key) && Array.isArray(errData[key])) {
+                                            messages = messages.concat(errData[key]);
+                                        } else if (errData.hasOwnProperty(key) && typeof errData[key] === 'string'){
+                                            messages.push(errData[key]);
+                                        }
+                                    }
+                                    errorMessage = messages.length > 0 ? messages.join('; ') : "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
+                                }
+                                else {
+                                     errorMessage = "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
+                                }
+                            } catch(e) {
+                                // Fallback if responseText is not JSON or badly formed
+                                if(jqXHR.responseText && jqXHR.responseText.length < 200) { // Show short plain text errors
+                                    errorMessage = "Error (400): " + jqXHR.responseText;
+                                } else {
+                                    errorMessage = "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
+                                }
+                            }
+                        } else if (jqXHR.status === 409) { // Conflict (e.g., ID already exists)
+                             errorMessage = "Customer ID already exists. Please use a different ID.";
+                             if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                                 errorMessage = jqXHR.responseJSON.message;
+                             }
+                        } else if (jqXHR.status === 0) {
+                            errorMessage = 'Cannot connect to the server. Please check your network connection or if the server is running.';
+                        } else if (jqXHR.statusText) {
+                            errorMessage = 'Error: ' + jqXHR.statusText + ' (Status: ' + jqXHR.status + ')';
+                        }
+                        showAlert(errorMessage, 'danger'); // Bootstrap 'danger'
+                    }
+                });
+            });
+        });
+
+        function showAlert(messageText, alertType) {
+            // Ensure #alertPlaceholder exists and is visible
+            const alertBoxArea = $("#alertPlaceholder");
+            if (!alertBoxArea.length) {
+                console.error("Alert placeholder not found in DOM!");
+                // Fallback to standard alert if placeholder is missing
+                alert(alertType.toUpperCase() + ": " + messageText);
+                return;
+            }
+            alertBoxArea.html(''); // Clear previous alerts
+            const newAlertHtml =
+                // Using Bootstrap alert classes
+                `<div class="alert alert-${alertType} alert-dismissible fade show" role="alert">
+                    ${messageText}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>`;
+            alertBoxArea.html(newAlertHtml);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(function() {
+                alertBoxArea.find(".alert").fadeOut("slow", function() { $(this).remove(); });
+            }, 5000);
+        }
+    /*]]>*/
+    </script>
+
+</body>
+</html>

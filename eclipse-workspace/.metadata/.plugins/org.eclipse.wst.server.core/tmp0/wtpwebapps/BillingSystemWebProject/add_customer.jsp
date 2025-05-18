@@ -1,16 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
 <%!
-    private String escapeHtml(String input) {
-        if (input == null) {
-            return "";
-        }
-        return input.replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace("\"", "&quot;")
-                    .replace("'", "&#x27;");
+private String escapeHtml(String input) {
+    if (input == null) {
+        return "";
     }
+    return input.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;");
+}
 %>
 
 <!DOCTYPE html>
@@ -22,24 +22,24 @@
 </head>
 <body>
     <div class="container">
-         <div class="page-header">
-             <h1 class="header-title">Billing System</h1>
-         </div>
-         <div class="content-wrapper">
+        <div class="page-header">
+            <h1 class="header-title">Billing System</h1>
+        </div>
+        <div class="content-wrapper">
             <div class="title-section">
-                 <h2 class="page-title">Add New Customer</h2>
+                <h2 class="page-title">Add New Customer</h2>
             </div>
 
-             <%
-                 String errorMessage = (String) request.getAttribute("errorMessage");
-                 if (errorMessage == null) { errorMessage = request.getParameter("error"); }
+            <%
+                String errorMessage = (String) request.getAttribute("errorMessage");
+                if (errorMessage == null) { errorMessage = request.getParameter("error"); }
 
-                 if (errorMessage != null && !errorMessage.isEmpty()) {
-             %>
-                    <p style="color: red; margin-bottom: 15px;">Error: <%= escapeHtml(errorMessage) %></p>
-             <%
-                 }
-             %>
+                if (errorMessage != null && !errorMessage.isEmpty()) {
+            %>
+            <p style="color: red; margin-bottom: 15px;">Error: <%= escapeHtml(errorMessage) %></p>
+            <%
+                }
+            %>
 
             <form action="CustomerServlet" method="post" class="customer-form" id="addCustomerForm">
                 <input type="hidden" name="action" value="add"/>
@@ -56,7 +56,7 @@
                     <label for="mobileNumber" class="form-label">Mobile Number:</label>
                     <input type="tel" id="mobileNumber" name="mobileNumber" class="form-input" required pattern="[0-9]{10}" title="Enter a 10-digit mobile number">
                 </div>
-                 <div class="form-group">
+                <div class="form-group">
                     <label for="customerLocation" class="form-label">Location:</label>
                     <input type="text" id="customerLocation" name="customerLocation" class="form-input">
                 </div>
@@ -69,12 +69,84 @@
             </form>
         </div>
         <footer class="page-footer">
-             &copy; 2025 Billing System
+            &copy; 2025 Billing System
         </footer>
     </div>
-    
-    <script>
-</script>
 
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script>
+        // API endpoint for customer operations
+        const API_BASE_URL = 'http://localhost:8081/api/customers';
+
+        $(document).ready(function() {
+            $('#addCustomerForm').on('submit', function(event) {
+                event.preventDefault();
+                const customerData = {
+                    customerId: $('#customerId').val().trim(),
+                    customerName: $('#customerName').val().trim(),
+                    mobileNumber: $('#mobileNumber').val().trim(),
+                    customerLocation: $('#customerLocation').val().trim()
+                };
+                if (!customerData.customerId || !customerData.customerName || !customerData.mobileNumber) {
+                    showAlert('Customer ID, Name, and Mobile Number are required.', 'warning');
+                    return;
+                }
+
+                console.log("Submitting customer data:", customerData);
+                $.ajax({
+                    url: API_BASE_URL,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(customerData),
+                    dataType: 'json',
+                    success: function(response, textStatus, jqXHR) {
+                        console.log("Customer added successfully:", response);
+                        showAlert('Customer "' + response.customerName + '" added successfully!', 'success');
+                        $('#addCustomerForm')[0].reset();
+                        $('#customerId').focus();
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error("Error adding customer:", jqXHR.status, jqXHR.responseText, errorThrown);
+                        let errorMessage = 'Error adding customer.';
+                        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+                            errorMessage = jqXHR.responseJSON.message;
+                        } else if (jqXHR.status === 400) {
+                            try {
+                                const errData = JSON.parse(jqXHR.responseText);
+                                if(errData && errData.message) errorMessage = errData.message;
+                                else errorMessage = "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
+                            } catch(e) {
+                                if(jqXHR.responseText && jqXHR.responseText.length < 100) {
+                                    errorMessage = "Invalid data (400): " + jqXHR.responseText;
+                                } else {
+                                    errorMessage = "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
+                                }
+                            }
+                        } else if (jqXHR.status === 0) {
+                            errorMessage = 'Cannot connect to server. Please check network or if server is running.';
+                        } else if (jqXHR.statusText) {
+                            errorMessage = 'Error: ' + jqXHR.statusText + ' (Status: ' + jqXHR.status + ')';
+                        }
+                        showAlert(errorMessage, 'danger');
+                    }
+                });
+            });
+        });
+
+        function showAlert(messageText, alertType) {
+            const alertBoxArea = $("#alertPlaceholder"); // Assuming you have a div with id="alertPlaceholder"
+            alertBoxArea.html('');
+            const newAlertHtml =
+                `<div class="alert alert-${alertType} alert-dismissible fade show" role="alert">
+                    ${messageText}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>`;
+            alertBoxArea.html(newAlertHtml);
+            setTimeout(function() {
+                alertBoxArea.find(".alert").fadeOut("slow", function() { $(this).remove(); });
+            }, 5000);
+        }
+    </script>
 </body>
 </html>
