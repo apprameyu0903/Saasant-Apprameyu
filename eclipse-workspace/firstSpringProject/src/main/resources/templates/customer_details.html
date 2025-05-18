@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer List</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <header class="page-header">
+        <div class="container">
+            <span class="header-title">Billing System</span>
+        </div>
+    </header>
+
+    <div class="container mt-4">
+        <div class="content-wrapper">
+            <div class="d-flex justify-content-between align-items-center mb-3 title-section">
+                <h1 class="page-title mb-0">Customer Management</h1>
+                <a th:href="@{/customers/add}" class="btn btn-primary add-customer-btn">Add New Customer</a>
+            </div>
+
+            <div th:if="${successMessage != null and !#strings.isEmpty(successMessage)}"
+                 class="alert alert-success alert-dismissible fade show" role="alert" id="successMessageDiv">
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div th:if="${errorMessage != null and !#strings.isEmpty(errorMessage)}"
+                 class="alert alert-danger alert-dismissible fade show" role="alert" id="errorMessageDiv">
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div id="ajaxAlertPlaceholder"></div>
+
+            <div class="search-bar-container">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="customerSearchInput" placeholder="Search customers by Name, ID, Mobile, or Location...">
+                    <div id="customerSuggestionsDropdown" class="list-group" style="display: none;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table table-striped customer-table" id="customerTable">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Mobile</th>
+                            <th>Location</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                       </tbody>
+                </table>
+                <div id="noResultsRowWrapper" style="display: none;"> <table class="table"><tbody><tr id="noResultsRow"><td colspan="5" class="text-center">No customers found.</td></tr></tbody></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editCustomerModal" tabindex="-1" role="dialog" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <form id="editCustomerForm"> <div class="modal-header">
+                        <h5 class="modal-title" id="editCustomerModalLabel">Edit Customer</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="editCustomerId" name="customerId">
+                        <div class="form-group">
+                            <label for="editCustomerName">Name</label>
+                            <input type="text" class="form-control" id="editCustomerName" name="customerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editMobileNumber">Mobile Number</label>
+                            <input type="text" class="form-control" id="editMobileNumber" name="mobileNumber" required pattern="[0-9]{10,15}">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCustomerLocation">Location</label>
+                            <input type="text" class="form-control" id="editCustomerLocation" name="customerLocation" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <p>&copy; <span th:text="${#dates.year(#dates.createNow())}"></span> Billing System. All rights reserved.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    // If API_BASE_URL needs to be context-aware, use Thymeleaf:
+    // const API_BASE_URL = /*[[@{/api/customers}]]*/ 'http://localhost:8081/api/customers';
+    // For now, using the hardcoded version from your original script:
+    const API_BASE_URL = 'http://localhost:8081/api/customers';
+
+    $(document).ready(initializePage);
+
+    function initializePage() {
+        setTimeout(fadeOutMessages, 3000);
+        $("#customerSearchInput").on("keyup", debounce(handleCustomerSearchInputKeyup, 300));
+        $("#customerSuggestionsDropdown").on("click", ".suggestion-item", handleSuggestionItemClick);
+        $(document).on("click", handleDocumentClickForSuggestions);
+        $("#customerSearchInput").on("focus", handleCustomerSearchInputFocus);
+        $("#customerTable").on("click", ".delete-link", handleDeleteLinkClick);
+        $("#customerTable").on("click", ".edit-link", handleEditLinkClick);
+        $("#editCustomerForm").on("submit", handleEditFormSubmit);
+        getAndShowCustomers("");
+    }
+
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    function fadeOutMessages() {
+        $("#successMessageDiv, #errorMessageDiv").fadeOut("slow");
+    }
+
+    function showAlertRevised(messageText, alertType) {
+        const alertBoxArea = $("#ajaxAlertPlaceholder");
+        alertBoxArea.html(''); // Clear previous alerts
+        const newAlertHtml =
+            `<div class="alert alert-${alertType} alert-dismissible fade show" role="alert">
+                ${messageText}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>`;
+        alertBoxArea.html(newAlertHtml);
+        setTimeout(function() {
+            alertBoxArea.find(".alert").fadeOut("slow", function() { $(this).remove(); });
+        }, 3000);
+    }
+
+    function handleCustomerSearchInputKeyup() {
+        const searchInputValue = $("#customerSearchInput").val().trim().toLowerCase();
+        getAndShowCustomers(searchInputValue); // This will also handle the suggestion box update
+    }
+
+    function getAndShowCustomers(searchText) {
+        let ajaxData = {};
+        if (searchText) {
+            ajaxData.query = searchText;
+        }
+        $.ajax({
+            url: API_BASE_URL,
+            type: "GET",
+            data: ajaxData,
+            dataType: "json",
+            success: function(customersFromServer) {
+                fillCustomerTable(customersFromServer); // Populates table
+
+                if (searchText && $("#customerSearchInput").is(":focus")) { // Show suggestions only if input has focus and there's text
+                    fillSuggestionsBox(customersFromServer, searchText);
+                } else {
+                    $("#customerSuggestionsDropdown").html("").hide();
+                }
+            },
+            error: function(xhr) {
+                console.error("AJAX Error fetching customers:", xhr.status, xhr.responseText);
+                showAlertRevised("Oops! Something went wrong while fetching customer data.", "danger");
+                $("#customerTable tbody").html(''); // Clear table body
+                showNoResultsMessageInTable("Error loading customer data. Please try again.");
+            }
+        });
+    }
+
+    function fillCustomerTable(customersList) {
+        const tableBodyElement = $("#customerTable tbody");
+        tableBodyElement.empty(); // Clear existing rows
+        $("#noResultsRowWrapper").hide(); // Hide the dedicated no results message area
+
+        if (customersList && customersList.length > 0) {
+            customersList.forEach(function(oneCustomer, index) {
+                const displayId = oneCustomer.customerId !== null && oneCustomer.customerId !== undefined ? oneCustomer.customerId : 'N/A';
+                const displayName = oneCustomer.customerName || 'N/A';
+                const displayMobile = oneCustomer.mobileNumber || 'N/A';
+                const displayLocation = oneCustomer.customerLocation || 'N/A';
+                
+                // Use actual ID for the row if available, otherwise a temporary one for rows that might lack a proper ID from server (shouldn't happen ideally)
+                const rowId = oneCustomer.customerId ? 'customerRow-' + oneCustomer.customerId : 'temp-customerRow-' + index;
+
+                var tableRowHtml = `<tr id="${rowId}">`;
+                tableRowHtml += `<td>${displayId}</td>`;
+                tableRowHtml += `<td class="name">${displayName}</td>`;
+                tableRowHtml += `<td class="mobile">${displayMobile}</td>`;
+                tableRowHtml += `<td class="location">${displayLocation}</td>`;
+                tableRowHtml += `<td>`;
+                // Ensure data-id is always set, even if customerId is null for some reason, to avoid 'undefined' in JS later
+                tableRowHtml += `<a class="action-link edit-link text-primary mr-2" href="#" data-id="${oneCustomer.customerId || ''}">Edit</a>`;
+                tableRowHtml += `<a class="action-link delete-link text-danger" href="#" data-id="${oneCustomer.customerId || ''}">Delete</a>`;
+                tableRowHtml += `</td>`;
+                tableRowHtml += `</tr>`;
+                
+                tableBodyElement.append(tableRowHtml);
+            });
+        } else {
+            const message = $("#customerSearchInput").val().trim() ? "No customers found matching your search." : "No customers available.";
+            showNoResultsMessageInTable(message);
+        }
+    }
+
+    // Updated to show message within the table structure
+    function showNoResultsMessageInTable(message) {
+        const tableBodyElement = $("#customerTable tbody");
+        tableBodyElement.html(`<tr id="noResultsRowDynamic"><td colspan="5" class="text-center">${message}</td></tr>`);
+    }
+
+
+    function fillSuggestionsBox(customersList, currentSearchText) {
+        const suggestionsDiv = $("#customerSuggestionsDropdown");
+        suggestionsDiv.empty().hide();
+
+        if (currentSearchText && currentSearchText.length > 0 && customersList && customersList.length > 0) {
+            let displayedCount = 0;
+            const maxSuggestions = 7;
+            // Filter more robustly, ensuring properties exist before calling toLowerCase()
+            const relevantCustomers = customersList.filter(customer =>
+                (customer.customerName && typeof customer.customerName.toLowerCase === 'function' && customer.customerName.toLowerCase().includes(currentSearchText)) ||
+                (customer.customerId && String(customer.customerId).toLowerCase().includes(currentSearchText)) ||
+                (customer.mobileNumber && String(customer.mobileNumber).includes(currentSearchText)) || // mobile typically doesn't need toLowerCase
+                (customer.customerLocation && typeof customer.customerLocation.toLowerCase === 'function' && customer.customerLocation.toLowerCase().includes(currentSearchText))
+            );
+
+            for (let i = 0; i < relevantCustomers.length && displayedCount < maxSuggestions; i++) {
+                const oneCustomer = relevantCustomers[i];
+                // Ensure customerId is available for data-id
+                if (oneCustomer.customerId !== null && oneCustomer.customerId !== undefined) {
+                    const suggestionLinkHtml =
+                        `<a href="#" class="list-group-item list-group-item-action suggestion-item" data-id="${oneCustomer.customerId}" data-name="${oneCustomer.customerName || ''}">
+                            ${oneCustomer.customerName || 'Unnamed Customer'} (ID: ${oneCustomer.customerId})
+                         </a>`;
+                    suggestionsDiv.append(suggestionLinkHtml);
+                    displayedCount++;
+                }
+            }
+            if (displayedCount > 0) {
+                suggestionsDiv.show();
+            }
+        }
+    }
+
+    function handleSuggestionItemClick(event) {
+        event.preventDefault();
+        const customerName = $(this).data("name");
+        const customerId = $(this).data("id"); // Get ID to potentially search by ID if name is not unique
+        $("#customerSearchInput").val(customerName); // Populate search bar with selected name
+        $("#customerSuggestionsDropdown").empty().hide();
+        // Refetch specifically for this customer or filter existing list if comprehensive
+        // For simplicity, re-triggering search with the name. Ideally, you might want to search by ID.
+        getAndShowCustomers(customerName.toLowerCase());
+    }
+
+    function handleDocumentClickForSuggestions(event) {
+        // If click is outside search bar and suggestions dropdown, hide suggestions
+        if (!$(event.target).closest(".search-bar-container").length) {
+            $("#customerSuggestionsDropdown").empty().hide();
+        }
+    }
+
+    function handleCustomerSearchInputFocus() {
+        const currentSearchText = $("#customerSearchInput").val().trim().toLowerCase();
+        // Optionally, reshow suggestions if there's text (e.g., if user clicks back into the input)
+        if (currentSearchText.length >= 1) {
+             getAndShowCustomers(currentSearchText); // This will call fillSuggestionsBox if results are found
+        }
+    }
+
+    function handleDeleteLinkClick(event) {
+        event.preventDefault();
+        const customerIdToDelete = $(this).data("id");
+        const customerName = $(this).closest("tr").find(".name").text() || "this customer"; // Fallback name
+
+        // Check for valid ID before proceeding
+        if (!customerIdToDelete || String(customerIdToDelete).trim() === "" || String(customerIdToDelete).toLowerCase() === "null" || String(customerIdToDelete).toLowerCase() === "undefined") {
+            showAlertRevised("Cannot delete: Customer ID is missing or invalid.", "danger");
+            console.warn("Attempted to delete with invalid ID:", customerIdToDelete);
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete customer: ${customerName} (ID: ${customerIdToDelete})?`)) {
+            const deleteUrl = `${API_BASE_URL}/${customerIdToDelete}`;
+            console.log("AJAX Delete URL being called:", deleteUrl);
+
+            $.ajax({
+                url: deleteUrl,
+                type: "DELETE",
+                success: function(response, status, xhr) {
+                    console.log("Delete successful for ID:", customerIdToDelete, "Status:", status);
+                    $(`#customerRow-${customerIdToDelete}`).remove(); // Remove the specific row
+                    showAlertRevised(`Customer ${customerName} (ID: ${customerIdToDelete}) deleted successfully.`, "success");
+                    // Check if table is empty and show message
+                    if ($("#customerTable tbody tr").length === 0) {
+                        showNoResultsMessageInTable("No customers available.");
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Delete error for ID:", customerIdToDelete, "Status:", xhr.status, "Response:", xhr.responseText);
+                    let errorMsg = "Could not delete the customer.";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    } else if (xhr.status === 404) {
+                        errorMsg = "Customer not found for deletion (404).";
+                    } else if (xhr.status === 405) {
+                        errorMsg = "Method Not Allowed (405). The server endpoint does not support DELETE or the URL is incorrect.";
+                    } else if (xhr.statusText) {
+                        errorMsg += ` Server responded: ${xhr.statusText} (Status: ${xhr.status})`;
+                    }
+                    showAlertRevised(errorMsg, "danger");
+                }
+            });
+        }
+    }
+
+    function handleEditLinkClick(event) {
+        event.preventDefault();
+        const customerIdToEdit = $(this).data("id");
+
+        if (!customerIdToEdit || String(customerIdToEdit).trim() === "" || String(customerIdToEdit).toLowerCase() === "null" || String(customerIdToEdit).toLowerCase() === "undefined") {
+            showAlertRevised("Cannot edit: Customer ID is missing or invalid.", "warning");
+            console.warn("Attempted to edit with invalid ID:", customerIdToEdit);
+            return;
+        }
+
+        $.ajax({
+            url: `${API_BASE_URL}/${customerIdToEdit}`,
+            type: "GET",
+            dataType: "json",
+            success: function(customerDataFromServer) {
+                if (customerDataFromServer && (customerDataFromServer.customerId !== null && customerDataFromServer.customerId !== undefined)) {
+                    $("#editCustomerId").val(customerDataFromServer.customerId);
+                    $("#editCustomerName").val(customerDataFromServer.customerName || '');
+                    $("#editMobileNumber").val(customerDataFromServer.mobileNumber || '');
+                    $("#editCustomerLocation").val(customerDataFromServer.customerLocation || '');
+                    $("#editCustomerModal").modal("show");
+                } else {
+                    showAlertRevised("Customer data not found or could not be retrieved.", "warning");
+                }
+            },
+            error: function(xhr) {
+                 console.error("Edit fetch error:", xhr.status, xhr.responseText);
+                 let errorMsg = "Could not retrieve customer details for editing.";
+                 if(xhr.status === 404){
+                    errorMsg = "Customer not found (404).";
+                 } else if (xhr.statusText) {
+                    errorMsg += ` Server responded: ${xhr.statusText} (Status: ${xhr.status})`;
+                 }
+                showAlertRevised(errorMsg, "danger");
+            }
+        });
+    }
+
+    function handleEditFormSubmit(event) {
+        event.preventDefault();
+        const customerId = $("#editCustomerId").val();
+        const customerData = {
+            // customerId: customerId, // Usually ID is part of URL, not body for PUT, but depends on API design
+            customerName: $("#editCustomerName").val(),
+            mobileNumber: $("#editMobileNumber").val(),
+            customerLocation: $("#editCustomerLocation").val()
+        };
+
+        // Validate ID from hidden field before making AJAX call
+        if (!customerId || String(customerId).trim() === "" || String(customerId).toLowerCase() === "null" || String(customerId).toLowerCase() === "undefined") {
+            showAlertRevised("Cannot update: Customer ID is missing in the form.", "danger");
+            console.error("Update form submitted with invalid/missing customer ID from #editCustomerId.");
+            return;
+        }
+
+        $.ajax({
+            url: `${API_BASE_URL}/${customerId}`,
+            type: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify(customerData),
+            dataType: "json", // Expect JSON response from server
+            success: function(updatedCustomerInfo) {
+                $("#editCustomerModal").modal("hide");
+                // Use the name from the response as it's the most up-to-date
+                const updatedName = updatedCustomerInfo.customerName || "N/A";
+                showAlertRevised(`Customer ${updatedName} (ID: ${updatedCustomerInfo.customerId}) updated successfully.`, "success");
+
+                const customerRowInTable = $(`#customerRow-${updatedCustomerInfo.customerId}`);
+                if (customerRowInTable.length) {
+                    customerRowInTable.find(".name").text(updatedCustomerInfo.customerName || "N/A");
+                    customerRowInTable.find(".mobile").text(updatedCustomerInfo.mobileNumber || "N/A");
+                    customerRowInTable.find(".location").text(updatedCustomerInfo.customerLocation || "N/A");
+                } else {
+                    // If row was somehow not found (e.g., ID changed, unlikely for PUT), refresh the whole list
+                    console.warn(`Row for updated customer ID ${updatedCustomerInfo.customerId} not found. Refreshing list.`);
+                    getAndShowCustomers("");
+                }
+            },
+            error: function(xhr) {
+                console.error("Update error for ID:", customerId, "Status:", xhr.status, "Response:", xhr.responseText);
+                let errorMsg = "Could not update customer.";
+                 if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.status === 404) {
+                     errorMsg = "Customer not found for update (404).";
+                } else if (xhr.status === 400) { // Bad Request (e.g. validation error on server)
+                     errorMsg = "Invalid data submitted for update (400). Please check all fields.";
+                     // You could attempt to parse xhr.responseJSON for specific field errors here if your API provides them
+                } else if (xhr.statusText) {
+                    errorMsg += ` Server responded: ${xhr.statusText} (Status: ${xhr.status})`;
+                }
+                showAlertRevised(errorMsg, "danger");
+            }
+        });
+    }
+    /*]]>*/
+    </script>
+</body>
+</html>
