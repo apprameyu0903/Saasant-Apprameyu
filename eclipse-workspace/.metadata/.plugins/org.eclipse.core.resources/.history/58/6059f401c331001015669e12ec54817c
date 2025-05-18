@@ -1,0 +1,98 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<%!
+    private String escapeHtml(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#x27;");
+    }
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Customer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+         <div class="page-header">
+             <h1 class="header-title">Billing System</h1>
+         </div>
+         <div class="content-wrapper">
+            <div class="title-section">
+                 <h2 class="page-title">Add New Customer</h2>
+            </div>
+
+             <%
+                 String errorMessage = (String) request.getAttribute("errorMessage");
+                 if (errorMessage == null) { errorMessage = request.getParameter("error"); }
+
+                 if (errorMessage != null && !errorMessage.isEmpty()) {
+             %>
+                    <p style="color: red; margin-bottom: 15px;">Error: <%= escapeHtml(errorMessage) %></p>
+             <%
+                 }
+             %>
+
+            <form action="CustomerServlet" method="post" class="customer-form" id="addCustomerForm">
+                <input type="hidden" name="action" value="add"/>
+
+                <div class="form-group">
+                    <label for="customerId" class="form-label">Customer ID:</label>
+                    <input type="text" id="customerId" name="customerId" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="customerName" class="form-label">Customer Name:</label>
+                    <input type="text" id="customerName" name="customerName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="mobileNumber" class="form-label">Mobile Number:</label>
+                    <input type="tel" id="mobileNumber" name="mobileNumber" class="form-input" required pattern="[0-9]{10}" title="Enter a 10-digit mobile number">
+                </div>
+                 <div class="form-group">
+                    <label for="customerLocation" class="form-label">Location:</label>
+                    <input type="text" id="customerLocation" name="customerLocation" class="form-input">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">Add Customer</button>
+                    <button type="reset" class="reset-btn">Reset</button>
+                    <a href="CustomerServlet" class="cancel-btn-link"><button type="button" class="cancel-btn">Cancel</button></a>
+                </div>
+            </form>
+        </div>
+        <footer class="page-footer">
+             &copy; 2025 Billing System
+        </footer>
+    </div>
+    
+    <script>
+	document.getElementById('addCustomerForm').addEventListener('submit', function(event) {
+	    event.preventDefault();
+	
+	    const customerData = {
+	        customerId: document.getElementById('customerId').value,
+	        customerName: document.getElementById('customerName').value,
+	        mobileNumber: document.getElementById('mobileNumber').value,
+	        customerLocation: document.getElementById('customerLocation').value
+	    };
+
+    fetch('http://localhost:8081/api/customers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(customerData),
+    })
+});
+</script>
+
+</body>
+</html>

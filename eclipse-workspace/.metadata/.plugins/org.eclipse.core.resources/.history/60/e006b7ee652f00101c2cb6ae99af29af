@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Form</title>
+    <script>
+        // Simple form validation function
+        function validateForm() {
+            // Get form inputs
+            let name = document.getElementById('name').value;
+            let email = document.getElementById('email').value;
+            let age = document.getElementById('age').value;
+            let password = document.getElementById('password').value;
+
+            // Get error message elements
+            let nameError = document.getElementById('nameError');
+            let emailError = document.getElementById('emailError');
+            let ageError = document.getElementById('ageError');
+            let passwordError = document.getElementById('passwordError');
+
+            // Reset error messages
+            nameError.style.display = 'none';
+            nameError.innerHTML = ''; // Clear previous messages
+            emailError.style.display = 'none';
+            emailError.innerHTML = '';
+            ageError.style.display = 'none';
+            ageError.innerHTML = '';
+            passwordError.style.display = 'none';
+            passwordError.innerHTML = ''; // Clear previous password errors
+
+            let isValid = true;
+            const MIN_PASSWORD_LENGTH = 6;
+
+            // Validate Name: Check if it's empty
+            if (name.trim() === "") {
+                nameError.textContent = "Name cannot be empty.";
+                nameError.style.display = 'block';
+                isValid = false;
+            }
+
+            // Validate Email: Check if it's empty
+            if (email.trim() === "") {
+                emailError.textContent = "Email cannot be empty.";
+                emailError.style.display = 'block';
+                isValid = false;
+            } else {
+                // Basic email format check (very simple)
+                if (!email.includes('@') || !email.includes('.')) {
+                    emailError.textContent = "Please enter a valid email address.";
+                    emailError.style.display = 'block';
+                    isValid = false;
+                }
+            }
+
+            // Validate Age: Check if it's empty and a number
+            if (age.trim() === "") {
+                ageError.textContent = "Age cannot be empty.";
+                ageError.style.display = 'block';
+                isValid = false;
+            } else if (isNaN(age) || parseInt(age) <= 0) {
+                ageError.textContent = "Please enter a valid age.";
+                ageError.style.display = 'block';
+                isValid = false;
+            }
+
+            // Validate Password
+            let passwordValidationMessages = [];
+            if (password.trim() === "") {
+                passwordValidationMessages.push("Password cannot be empty.");
+                isValid = false;
+            } else {
+                if (password.length < MIN_PASSWORD_LENGTH) {
+                    passwordValidationMessages.push("Must be at least " + MIN_PASSWORD_LENGTH + " characters long.");
+                    isValid = false;
+                }
+                // Check for at least one lowercase letter
+                if (!/[a-z]/.test(password)) {
+                    passwordValidationMessages.push("Must contain at least one lowercase letter (a-z).");
+                    isValid = false;
+                }
+                // Check for at least one uppercase letter
+                if (!/[A-Z]/.test(password)) {
+                    passwordValidationMessages.push("Must contain at least one uppercase letter (A-Z).");
+                    isValid = false;
+                }
+                // Check for at least one digit
+                if (!/\d/.test(password)) { // or !/[0-9]/.test(password)
+                    passwordValidationMessages.push("Must contain at least one digit (0-9).");
+                    isValid = false;
+                }
+                // Check for at least one special character
+                // You can customize the set of special characters
+                if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password)) {
+                    passwordValidationMessages.push("Must contain at least one special character (e.g., !@#$%^&*).");
+                    isValid = false;
+                }
+            }
+
+            if (passwordValidationMessages.length > 0) {
+                passwordError.innerHTML = passwordValidationMessages.join("<br>"); // Display all messages
+                passwordError.style.display = 'block';
+            }
+
+            return isValid; // If true, form submits; if false, submission is blocked
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>User Information Form</h2>
+        <form action="DataServlet" method="post" onsubmit="return validateForm()">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="userName">
+                <div class="error-message" id="nameError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="userEmail">
+                <div class="error-message" id="emailError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age:</label>
+                <input type="number" id="age" name="userAge">
+                <div class="error-message" id="ageError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="userPassword">
+                <div class="error-message" id="passwordError"></div>
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>

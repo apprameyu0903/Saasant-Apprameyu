@@ -1,0 +1,225 @@
+package com.dao;
+
+import com.util.DBUtil;
+import com.vo.ProductInfo;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class ProductDaoTest {
+
+    @Mock
+    private Connection mockConnection;
+    @Mock
+    private PreparedStatement mockPreparedStatement;
+    @Mock
+    private ResultSet mockResultSet;
+    @Mock
+    private Statement mockStatement;
+
+    @InjectMocks
+    private ProductDao productDao;
+
+    private ProductInfo product;
+
+    @BeforeEach
+    void setUp() {
+        product = new ProductInfo("PROD001", "Test Product", "Description", "pcs", 100.0f, "Category", 10.0f, 5);
+    }
+
+    @Test
+    void addProduct_success() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(1); // Simulate 1 row affected
+
+            // addProduct has void return, so we verify interactions
+            productDao.addProduct(product);
+
+            verify(mockPreparedStatement, times(1)).setString(1, product.getProductId());
+            verify(mockPreparedStatement, times(1)).setString(2, product.getProductName());
+            verify(mockPreparedStatement, times(1)).setString(3, product.getProductDescription());
+            verify(mockPreparedStatement, times(1)).setString(4, product.getUnit());
+            verify(mockPreparedStatement, times(1)).setFloat(5, product.getUnitPrice());
+            verify(mockPreparedStatement, times(1)).setString(6, product.getCategory());
+            verify(mockPreparedStatement, times(1)).setFloat(7, product.getTax());
+            verify(mockPreparedStatement, times(1)).setInt(8, product.getQuantity());
+            verify(mockPreparedStatement, times(1)).executeUpdate();
+        }
+    }
+
+    @Test
+    void addProduct_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+
+            // Since System.out.println is called, we can't directly assert an exception was handled
+            // other than verifying no further operations if it were to return something.
+            // For void methods, this mainly tests that an unhandled SQLException doesn't propagate.
+            assertDoesNotThrow(() -> productDao.addProduct(product));
+             // Optionally, verify that executeUpdate was not called if prepareStatement fails.
+            // verify(mockPreparedStatement, never()).executeUpdate(); // This would fail as ps is not initialized
+        }
+    }
+
+
+    @Test
+    void getProductById_found() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+
+            when(mockResultSet.next()).thenReturn(true); // Product found
+            when(mockResultSet.getString("product_id")).thenReturn(product.getProductId());
+            when(mockResultSet.getString("product_name")).thenReturn(product.getProductName());
+            when(mockResultSet.getString("product_desc")).thenReturn(product.getProductDescription());
+            when(mockResultSet.getString("unit")).thenReturn(product.getUnit());
+            when(mockResultSet.getFloat("unit_price")).thenReturn(product.getUnitPrice());
+            when(mockResultSet.getString("category")).thenReturn(product.getCategory());
+            when(mockResultSet.getFloat("taxPercentage")).thenReturn(product.getTax());
+            // Quantity is not set in this constructor of ProductInfo within getProductById
+
+            ProductInfo foundProduct = productDao.getProductById(product.getProductId());
+
+            assertNotNull(foundProduct);
+            assertEquals(product.getProductId(), foundProduct.getProductId());
+            assertEquals(product.getProductName(), foundProduct.getProductName());
+            verify(mockPreparedStatement, times(1)).setString(1, product.getProductId());
+        }
+    }
+
+    @Test
+    void getProductById_notFound() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+            when(mockResultSet.next()).thenReturn(false); // Product not found
+
+            ProductInfo foundProduct = productDao.getProductById("PROD_NON_EXIST");
+
+            assertNull(foundProduct);
+        }
+    }
+    
+    @Test
+    void getProductById_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+            
+            ProductInfo foundProduct = productDao.getProductById(product.getProductId());
+            assertNull(foundProduct);
+        }
+    }
+
+
+    @Test
+    void getAllProducts_success() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.createStatement()).thenReturn(mockStatement);
+            when(mockStatement.executeQuery(anyString())).thenReturn(mockResultSet);
+
+            when(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false); // Two products
+            when(mockResultSet.getString("product_id")).thenReturn("P001").thenReturn("P002");
+            when(mockResultSet.getString("product_name")).thenReturn("Product A").thenReturn("Product B");
+            when(mockResultSet.getString("product_desc")).thenReturn("Desc A").thenReturn("Desc B");
+            when(mockResultSet.getString("unit")).thenReturn("pc").thenReturn("kg");
+            when(mockResultSet.getFloat("unit_price")).thenReturn(10f).thenReturn(20f);
+            when(mockResultSet.getString("category")).thenReturn("Cat X").thenReturn("Cat Y");
+            when(mockResultSet.getFloat("taxPercentage")).thenReturn(5f).thenReturn(8f);
+            when(mockResultSet.getInt("quantity")).thenReturn(10).thenReturn(5);
+
+
+            List<ProductInfo> products = productDao.getAllProducts();
+
+            assertNotNull(products);
+            assertEquals(2, products.size());
+            assertEquals("P001", products.get(0).getProductId());
+            assertEquals("Product A", products.get(0).getProductName());
+            assertEquals(10, products.get(0).getQuantity());
+            assertEquals("P002", products.get(1).getProductId());
+            assertEquals("Product B", products.get(1).getProductName());
+            assertEquals(5, products.get(1).getQuantity());
+        }
+    }
+    
+    @Test
+    void getAllProducts_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.createStatement()).thenThrow(new SQLException("DB error"));
+
+            List<ProductInfo> products = productDao.getAllProducts();
+            assertNotNull(products);
+            assertTrue(products.isEmpty());
+        }
+    }
+
+
+    @Test
+    void updateProduct_success() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(1); // 1 row updated
+
+            ProductInfo updatedProduct = new ProductInfo(product.getProductId(), "Updated Name", "Updated Desc", "kg", 150.0f, "New Cat", 12.0f, 10);
+            boolean result = productDao.updateProduct(updatedProduct);
+
+            assertTrue(result);
+            verify(mockPreparedStatement, times(1)).setString(1, updatedProduct.getProductName());
+            verify(mockPreparedStatement, times(1)).setString(2, updatedProduct.getProductDescription());
+            verify(mockPreparedStatement, times(1)).setString(3, updatedProduct.getUnit());
+            verify(mockPreparedStatement, times(1)).setFloat(4, updatedProduct.getUnitPrice());
+            verify(mockPreparedStatement, times(1)).setString(5, updatedProduct.getCategory());
+            verify(mockPreparedStatement, times(1)).setFloat(6, updatedProduct.getTax());
+            verify(mockPreparedStatement, times(1)).setInt(7, updatedProduct.getQuantity());
+            verify(mockPreparedStatement, times(1)).setString(8, updatedProduct.getProductId());
+        }
+    }
+    
+    @Test
+    void updateProduct_failure_noRowUpdated() throws SQLException {
+         try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(0); // 0 rows updated
+
+            boolean result = productDao.updateProduct(product);
+            assertFalse(result);
+        }
+    }
+
+    @Test
+    void updateProduct_failure_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+
+            boolean result = productDao.updateProduct(product);
+            assertFalse(result);
+        }
+    }
+}

@@ -1,0 +1,161 @@
+package com.util;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+
+@ExtendWith(MockitoExtension.class) // Added for Mockito features if needed elsewhere
+public class DBUtilTest {
+
+    // This test is from the original file and is good for checking class/driver loading
+    @Test
+    void testDBUtilClassLoadsAndDriverInitializes() {
+        try {
+            Class<?> dbUtilClass = Class.forName("com.util.DBUtil");
+            assertNotNull(dbUtilClass, "DBUtil class should be loadable.");
+            // If this passes, the static block in DBUtil (Class.forName for driver) executed.
+            // A failure here would point to driver class not found or init error.
+            System.out.println("DBUtil class loaded successfully, JDBC driver likely initialized via static block.");
+        } catch (ClassNotFoundException e) {
+            fail("DBUtil class itself was not found on the classpath: " + e.getMessage(), e);
+        } catch (ExceptionInInitializerError e) {
+            Throwable cause = e.getCause();
+            String causeMessage = (cause != null) ? cause.getMessage() : "Unknown cause";
+            // This indicates the static block in DBUtil threw an error (e.g., com.mysql.cj.jdbc.Driver not found)
+            fail("Static initializer of DBUtil failed. This often means the JDBC driver (com.mysql.cj.jdbc.Driver) was not found or failed to load: " + causeMessage, e);
+        }
+    }
+
+    @Test
+    void testGetConnection_SuccessfulMockedDriverManager() {
+        Connection mockConn = mock(Connection.class); // Mock the connection
+        // Mock the static DriverManager.getConnection method
+        try (MockedStatic<DriverManager> mockedDriverManager = Mockito.mockStatic(DriverManager.class)) {
+            // Ensure DBUtil's static initializer (Class.forName for driver) has a chance or is bypassed
+            // For this specific test, we assume the driver is "loaded" and focus on DriverManager behavior.
+            
+            mockedDriverManager.when(() -> DriverManager.getConnection(anyString(), anyString(), anyString()))
+                               .thenReturn(mockConn);
+
+            Connection actualConnection = null;
+            try {
+                 // We need to ensure the DBUtil's static block (which loads the driver) doesn't fail
+                 // If the driver isn't actually in the classpath, the static block of DBUtil would fail before getConnection is called.
+                 // This test is more about ensuring DBUtil calls DriverManager correctly.
+                actualConnection = DBUtil.getConnection(); // Call the method under test
+            } catch (ExceptionInInitializerError e) {
+                // This might happen if the real driver specified in DBUtil's static block is not on the test classpath.
+                // For a pure unit test isolating DBUtil's call to DriverManager, one might need to refactor DBUtil
+                // or ensure the test environment can satisfy the Class.forName call.
+                fail("DBUtil static initializer failed, possibly due to missing driver for Class.forName, even when mocking DriverManager: " + e.getCause());
+            } catch (SQLException e) {
+                 fail("SQLException was not expected when DriverManager is mocked: " + e.getMessage());
+            }
+
+
+            assertNotNull(actualConnection, "Connection should not be null when DriverManager is mocked to return a connection.");
+            assertSame(mockConn, actualConnection, "The connection returned should be the mocked connection.");
+            
+            // Verify that DBUtil called DriverManager.getConnection with the expected URL, user, pass
+            // These values are private in DBUtil, so direct verification of args is harder without changing DBUtil.
+            // We trust that if it returns our mock, it must have called it.
+            mockedDriverManager.verify(() -> DriverManager.getConnection(
+                "jdbc:mysql://localhost:3306/billingsystem", "root", "@ppr@meY24"
+            ));
+
+        }
+    }
+    
+    @Test
+    void testGetConnection_DriverManagerThrowsSQLException() {
+         // Mock the static DriverManager.getConnection method to throw SQLException
+        try (MockedStatic<DriverManager> mockedDriverManager = Mockito.mockStatic(DriverManager.class)) {
+            mockedDriverManager.when(() -> DriverManager.getConnection(anyString(), anyString(), anyString()))
+                               .thenThrow(new SQLException("Mocked SQL Exception from DriverManager"));
+            
+            Exception exception = assertThrows(SQLException.class, () -> {
+                DBUtil.getConnection(); // Call the method under test
+            }, "Expected SQLException when DriverManager.getConnection throws it.");
+
+            assertEquals("Mocked SQL Exception from DriverManager", exception.getMessage());
+        }
+    }
+
+
+    // --- Integration Tests (from original file, good to keep) ---
+    @Test
+    @EnabledIfSystemProperty(named = "run.integration.tests", matches = "true")
+    void testGetConnection_IntegrationTest() {
+        Connection connection = null;
+        try {
+            System.out.println("Attempting INTEGRATION TEST: DBUtil.getConnection()...");
+            System.out.println("Ensure MySQL is running at jdbc:mysql://localhost:3306/billingsystem with correct credentials.");
+            
+            connection = DBUtil.getConnection();
+            assertNotNull(connection, "Connection should not be null if database is accessible.");
+            System.out.println("Successfully connected to the database: " + connection.getMetaData().getURL());
+
+        } catch (SQLException e) {
+            e.printStackTrace(); 
+            fail("SQLException during DBUtil.getConnection() integration test. " +
+                 "Ensure database is running and accessible with credentials in DBUtil. Error: " + e.getMessage(), e);
+        } catch (ExceptionInInitializerError e) { // Catch error from static block if driver fails to load
+            Throwable cause = e.getCause();
+            String causeMessage = (cause != null) ? cause.getMessage() : "Unknown cause";
+            fail("Static initializer of DBUtil failed during integration test. Check JDBC driver: " + causeMessage, e);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    System.err.println("Error closing connection in test: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "force.db.unavailable.test", matches = "true")
+    void testGetConnection_ExpectSQLException_WhenDBUnavailable_IntegrationTest() {
+        System.out.println("Attempting INTEGRATION TEST: DBUtil.getConnection() expecting a throwable (DB unavailable/driver issue)...");
+        System.out.println("This test assumes the database IS NOT available, credentials are WRONG, or JDBC driver is missing.");
+
+        // Catch Throwable instead of Exception
+        Throwable throwable = assertThrows(Throwable.class, () -> {
+            DBUtil.getConnection(); // This call might trigger the static initializer if DBUtil hasn't been used yet
+        }, "Expected a throwable (SQLException or ExceptionInInitializerError) when database is unavailable or driver fails.");
+
+        // Now the instanceof checks are against 'throwable'
+        // This corresponds to the previous line 139 area
+        assertTrue(throwable instanceof SQLException || throwable instanceof ExceptionInInitializerError,
+                   "Expected SQLException or ExceptionInInitializerError. Got: " +
+                   throwable.getClass().getName() + " with message: " + throwable.getMessage());
+
+        if (throwable instanceof SQLException) {
+            SQLException sqlEx = (SQLException) throwable; // Safe to cast now
+            System.out.println("SQLException correctly thrown: " + sqlEx.getMessage());
+        } else if (throwable instanceof ExceptionInInitializerError) { // This corresponds to the previous line 143 area
+            ExceptionInInitializerError eie = (ExceptionInInitializerError) throwable; // Safe to cast
+            Throwable cause = eie.getCause(); // The original exception from the static block
+            String causeMessage = (cause != null) ? cause.getMessage() : "No specific cause message";
+            String causeClass = (cause != null) ? cause.getClass().getName() : "N/A";
+            System.out.println("ExceptionInInitializerError correctly thrown (likely driver issue). Cause: " + causeClass + " - " + causeMessage);
+            if (cause != null) {
+                // It can be helpful to print the stack trace of the cause for more details
+                // cause.printStackTrace(System.out); // Uncomment if you need more debug info
+            }
+        }
+        // No 'else' needed here, as the assertTrue would have failed if it was neither.
+    }
+}

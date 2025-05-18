@@ -1,0 +1,329 @@
+body, h1, h2, p, table, th, td, input, button, label, a, textarea, form {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f3f4f6;
+    color: #333;
+    padding-bottom: 2%;
+    font-size: 100%;
+}
+
+.container {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1.5%;
+}
+
+.page-header {
+    background-color: #334155;
+    color: white;
+    padding: 1.5% 0;
+    margin-bottom: 2%;
+}
+
+.header-title {
+    font-size: 125%;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.header-icon {
+    font-size: 125%;
+    float: right;
+    margin-top: 0.2%;
+}
+
+.content-wrapper {
+    background-color: white;
+    padding: 2%;
+    border-width: 0.1%;
+    border-style: solid;
+    border-color: #ddd;
+}
+
+.title-section {
+    margin-bottom: 2.5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-size: 175%;
+    font-weight: 700;
+    color: #374151;
+}
+
+.add-customer-btn,
+.submit-btn,
+.cancel-btn,
+.reset-btn {
+    font-weight: 600;
+    padding: 0.8% 1.5%;
+    border-width: 0.1%;
+    border-style: solid;
+    border-color: #6d28d9;
+    cursor: pointer;
+    text-decoration: none;
+    border-radius: 0.4%;
+    margin-right: 0.8%;
+    font-size: 100%;
+}
+.form-actions button:last-child,
+.form-actions a:last-child button {
+    margin-right: 0;
+}
+.form-actions a:last-of-type { /* Ensure the link wrapper itself doesn't have extra margin if it's last */
+    margin-right: 0;
+}
+
+
+.add-customer-btn,
+.submit-btn {
+    background-color: #7c3aed;
+    color: white;
+}
+.add-customer-btn:hover,
+.submit-btn:hover {
+    background-color: #6d28d9;
+}
+
+.cancel-btn {
+    background-color: #6c757d;
+    border-color: #5a6268;
+    color: white;
+}
+.cancel-btn:hover {
+    background-color: #5a6268;
+}
+
+.reset-btn {
+    background-color: #ffc107;
+    border-color: #e0a800;
+    color: #212529;
+}
+.reset-btn:hover {
+    background-color: #e0a800;
+}
+
+.add-customer-btn-link,
+.cancel-btn-link {
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 0.8%;
+}
+
+
+.search-section {
+    margin-bottom: 2%;
+}
+
+.search-label {
+    color: #4b5563;
+    font-weight: 500;
+    margin-right: 1%;
+    display: inline-block;
+    margin-bottom: 0;
+    font-size: 100%;
+}
+
+.search-input {
+    display: inline-block;
+    width: 30%;
+    padding: 0.8%;
+    border-width: 0.1%;
+    border-style: solid;
+    border-color: #d1d5db;
+    vertical-align: middle;
+    font-size: 90%;
+}
+.search-input:focus {
+    outline-width: 0.05%;
+    outline-style: solid;
+    outline-color: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.table-container {
+    border-width: 0.1%;
+    border-style: solid;
+    border-color: #e5e7eb;
+    margin-top: 2%;
+    overflow-x: auto;
+}
+
+.customer-table {
+    width: 100%;
+    background-color: white;
+    border-collapse: collapse;
+}
+
+.customer-table th, .customer-table td {
+    text-align: left;
+    padding: 1% 1.2%;
+    border-width: 0.05%;
+    border-style: solid;
+    border-color: #eee;
+}
+
+.customer-table thead {
+    background-color: #334155;
+    color: white;
+}
+
+.customer-table th {
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 81.25%;
+}
+
+.customer-table tbody tr td {
+    color: #374151;
+    font-size: 90%;
+}
+
+.action-link {
+    font-weight: 500;
+    text-decoration: none;
+    margin-right: 0.8%;
+    font-size: 90%;
+}
+.edit-link { color: #3b82f6; }
+.edit-link:hover { text-decoration: underline; }
+.delete-link { color: #ef4444; }
+.delete-link:hover { text-decoration: underline; }
+
+.page-footer {
+    background-color: #e5e7eb;
+    text-align: center;
+    font-size: 81.25%;
+    color: #4b5563;
+    padding: 1.5%;
+    margin-top: 3%;
+    border-top-width: 0.1%;
+    border-top-style: solid;
+    border-top-color: #ccc;
+}
+
+.customer-form {
+    margin-top: 2%;
+}
+
+.form-group {
+    margin-bottom: 1.5%;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5%;
+    font-weight: 500;
+    color: #4b5563;
+    font-size: 100%;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    padding: 0.8%;
+    border-width: 0.1%;
+    border-style: solid;
+    border-color: #d1d5db;
+    font-size: 90%;
+    border-radius: 0.4%;
+}
+.form-input:focus,
+.form-textarea:focus {
+    outline-width: 0.05%;
+    outline-style: solid;
+    outline-color: #7c3aed;
+    border-color: #7c3aed;
+}
+
+.form-textarea {
+    min-height: 8%;
+    resize: vertical;
+}
+
+.form-actions {
+    margin-top: 2%;
+    display: flex;
+    gap: 0%; /* Let margin on buttons/links handle spacing if not all are direct children */
+    align-items: center; /* Align items vertically */
+}
+
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 3% 3%;
+    border-radius: 1%;
+    box-shadow: 0 0.5% 1.5% rgba(0, 0, 0, 0.3);
+    text-align: center;
+    width: 90%;
+    max-width: 45%;
+    z-index: 1001;
+}
+
+.modal-title {
+    font-size: 125%;
+    color: #333;
+    margin-bottom: 1%;
+}
+
+.modal-customer-info {
+    font-size: 110%;
+    color: #555;
+    margin-bottom: 2.5%;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5%;
+}
+
+.modal-button {
+    padding: 1% 2.5%;
+    border-width: 0.1%;
+    border-style: solid;
+    border-radius: 0.5%;
+    font-size: 100%;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.modal-button.cancel {
+    background-color: #7c3aed;
+    color: white;
+    border-color: #6d28d9;
+}
+.modal-button.cancel:hover {
+    background-color: #6d28d9;
+}
+
+.modal-button.delete {
+    background-color: #7c3aed;
+    color: white;
+    border-color: #6d28d9;
+}
+.modal-button.delete:hover {
+    background-color: #6d28d9;
+}

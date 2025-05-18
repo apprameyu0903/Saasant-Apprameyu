@@ -1,0 +1,230 @@
+package com.billingsystem;
+import com.service.*;
+import com.vo.CustomerDetails;
+import com.vo.Invoice;
+import com.vo.MerchantDetails;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+
+public class BillingSystemMain {
+    static Scanner sc = new Scanner(System.in);
+    MerchantDetails merchant = new MerchantDetails("Apprameyu Silks");
+    ProductServiceInterface pService =  new ProductService();
+    CustomerServiceInterface cService = new CustomerService();
+    BillingServiceInterface bService = new BillingService();
+
+    public void billingSystem(){
+
+        CustomerDetails customer = cService.addCustomer();
+        Invoice invoice = new Invoice(
+                merchant,
+                customer,
+                bService.billingService(),
+                bService.subTotal(),
+                bService.gstCalc(),
+                bService.calcTotal(),
+                LocalDate.now().plusDays(30),
+                LocalDateTime.now()
+        );
+        invoice.printInvoice();
+    }
+    
+    public void manageCustomers() {
+        int choice;
+        do {
+            System.out.println("\n--- Customer Management ---");
+            System.out.println("1. Add Customer");
+            System.out.println("2. Update Customer");
+            System.out.println("3. Delete Customer");
+            System.out.println("4. List All Customers");
+            System.out.println("5. Back to Main Menu");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+
+            switch (choice) {
+                case 1:
+                    cService.addCustomer();
+                    break;
+
+                case 2:
+            		System.out.print("Enter Customer ID to update: ");
+                    String updateId = sc.nextLine();
+                    cService.updateCustomer(updateId);
+                    break;
+
+                case 3:
+            		System.out.print("Enter Customer ID to delete: ");
+                    String deleteId = sc.nextLine();
+                    cService.deleteCustomer(deleteId);
+                    break;
+
+                case 4:
+                    List<CustomerDetails> customers = cService.getAllCustomers();
+                    System.out.println("\n--- Customer List ---");
+                    for (CustomerDetails c : customers) {
+                        System.out.println("ID: " + c.getCustomerId() + " | Name: " + c.getCustomerName() + " | Mobile: " + c.getMobileNumber());
+                    }
+                    break;
+
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
+        } while (choice != 5);
+    }
+    
+    public void updateProductCatalog() {
+    	System.out.println("Enter Product ID to update: ");
+    	String productId = sc.nextLine();
+    	pService.updateProductDetails(productId);
+    }
+
+    /*public void billingSystem() {
+        System.out.print("Enter Customer ID: ");
+        String customerId = sc.nextLine();
+
+        CustomerDetails customer = customerDatabase.computeIfAbsent(customerId, id -> {
+            System.out.print("Enter Customer Name: ");
+            String name = sc.nextLine();
+            System.out.print("Enter Customer Mobile No.: ");
+            String mobile = sc.nextLine();
+            while (mobile.length() < 10) {
+                System.out.print("Please enter a valid 10-digit mobile number: ");
+                mobile = sc.nextLine();
+            }
+            System.out.println("✅ New customer added.");
+            return new CustomerDetails(id, name, mobile);
+        });
+
+        if (customerDatabase.containsKey(customerId)) {
+            System.out.println("✔️ Existing customer found: " + customer.getCustomerName() + " (" + customer.getMobileNumber() + ")");
+        }
+
+        while (true) {
+            System.out.print("Enter Product ID: ");
+            String productId = sc.nextLine();
+
+            Optional.ofNullable(productCatalog.get(productId)).ifPresentOrElse(product -> {
+                System.out.print("Enter Quantity: ");
+                int quantity = sc.nextInt();
+                sc.nextLine();
+
+                ProductInfo billedProduct = new ProductInfo(
+                        product.getProductId(),
+                        product.getProductDescription(),
+                        product.getUnitPrice(),
+                        product.getTax()
+                );
+                billedProduct.setQuantity(quantity);
+                products.add(billedProduct);
+                System.out.println("Product added successfully!");
+            }, () -> {
+                System.out.println("⚠️ Product not found!");
+            });
+
+            System.out.print("Do you want to add another product? (Y/N): ");
+            String addMore = sc.nextLine();
+            if (!addMore.equalsIgnoreCase("Y")) break;
+        }
+
+        float subTotal = (float) products.stream().mapToDouble(ProductInfo::getTotalAmount).sum();
+
+        float gst = subTotal * 0.18f;
+        float grandTotal = subTotal + gst;
+
+        Invoice invoice = new Invoice(
+                merchant,
+                customer,
+                products,
+                subTotal,
+                gst,
+                grandTotal,
+                LocalDate.now().plusDays(30),
+                LocalDateTime.now()
+        );
+        invoice.printInvoice();
+    }
+
+    public void printProductCatalog() {
+        System.out.println("\nProduct Catalog:");
+        System.out.println("ID        Description               Price     Tax(%)");
+        System.out.println("-------------------------------------------------------");
+
+        productCatalog.values().stream()
+                .forEach(p -> {
+                    String line = p.getProductId() + "    " +
+                            String.format("%-25s", p.getProductDescription()) +
+                            "₹" + String.format("%.2f", p.getUnitPrice()) + "   " +
+                            String.format("%.2f", p.getTax()) + "%";
+                    System.out.println(line);
+                });
+    }*/
+
+    public static void main(String[] args) {
+        BillingSystemMain bc = new BillingSystemMain();
+
+        int choice;
+        do {
+            System.out.println("\n--- Main Menu ---");
+            System.out.println("1. Update the Product Catalog");
+            System.out.println("2. Billing System");
+            System.out.println("3. Print Product Catalog");
+            System.out.println("4. Manage Customers");
+            System.out.println("5. Manage Products");
+            System.out.println("6. Exit");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+
+            switch (choice) {
+                case 1:
+                    bc.pService.addProducts();
+                    break;
+                case 2:
+                    bc.billingSystem();
+                    break;
+                case 3:
+                    bc.pService.printProductCatalog();
+                    break;
+                case 4:
+                	bc.manageCustomers();
+                	break;
+                case 5:
+                	bc.updateProductCatalog();
+                	break;
+                case 6:
+                    System.out.println("Exiting... Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+                    break;
+            }
+
+        } while (choice != 6);
+
+        /*Map<Integer, Runnable> menuOptions = new HashMap<>();
+        menuOptions.put(1, bc::addProducts);
+        menuOptions.put(2, bc::billingSystem);
+        menuOptions.put(3, bc::printProductCatalog);
+
+        int choice;
+        do {
+            System.out.println("\n--- Main Menu ---");
+            System.out.println("1. Update the Product Catalog");
+            System.out.println("2. Billing System");
+            System.out.println("3. Print Product Catalog");
+            System.out.println("4. Exit");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+
+            menuOptions.getOrDefault(choice, () -> System.out.println("Invalid choice. Please try again.")).run();
+
+        } while (choice != 4);
+
+        System.out.println("Exiting... Goodbye!");*/
+
+        sc.close();
+    }
+}

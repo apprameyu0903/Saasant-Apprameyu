@@ -1,0 +1,49 @@
+package com.util;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class DBUtil {
+    private static final String URL = "jdbc:mysql://localhost:3306/billingsystem";
+    private static final String USER = "root";
+    private static final String PASSWORD = "@ppr@meY24";
+
+    // Private static volatile instance for the singleton
+    private static volatile DBUtil instance;
+
+    // Static block for loading the driver (runs once when the class is loaded)
+    static {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Failed to load MySQL JDBC Driver", e);
+        }
+    }
+
+    // Private constructor to prevent direct instantiation
+    private DBUtil() {
+        // Prevent instantiation via reflection
+        if (instance != null) {
+            throw new IllegalStateException("Singleton already constructed");
+        }
+    }
+
+    // Public static method to get the singleton instance (thread-safe)
+    public static DBUtil getInstance() {
+        // Double-checked locking for thread safety and performance
+        if (instance == null) {
+            synchronized (DBUtil.class) {
+                if (instance == null) {
+                    instance = new DBUtil();
+                }
+            }
+        }
+        return instance;
+    }
+
+    // Instance method to get a database connection
+    public Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASSWORD);
+    }
+}

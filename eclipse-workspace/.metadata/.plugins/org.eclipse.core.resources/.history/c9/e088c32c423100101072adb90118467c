@@ -1,0 +1,194 @@
+package com.service;
+
+import com.dao.ProductDaoInterface;
+import com.vo.ProductInfo;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class ProductServiceTest {
+
+    @Mock
+    private ProductDaoInterface mockProductDao;
+
+    @InjectMocks
+    private ProductService productService; 
+    private ProductInfo product1;
+    private ProductInfo product2;
+
+    private void provideInput(String data) {
+        InputStream stdin = System.in;
+        try {
+            System.setIn(new ByteArrayInputStream(data.getBytes()));
+            productService = new ProductService(); 
+             try {
+                java.lang.reflect.Field daoField = ProductService.class.getDeclaredField("prods");
+                daoField.setAccessible(true);
+                daoField.set(productService, mockProductDao);
+
+                java.lang.reflect.Field scannerField = ProductService.class.getDeclaredField("sc");
+                scannerField.setAccessible(true);
+                scannerField.set(productService, new Scanner(System.in));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException("Failed to inject mocks into ProductService via reflection", e);
+            }
+        } finally {
+        }
+    }
+
+
+    @BeforeEach
+    void setUp() {
+        product1 = new ProductInfo("P001", "Laptop", "Gaming Laptop", "pcs", 1200.0f, "Electronics", 18.0f, 10);
+        product2 = new ProductInfo("P002", "Mouse", "Wireless Mouse", "pcs", 25.0f, "Electronics", 18.0f, 50);
+    }
+
+    @Test
+    void updateProductDetails_productExists_success() {
+        String productIdToUpdate = "P001";
+        String simulatedInput = "Updated Laptop\nUltra Gaming Laptop\nitem\n1300.0\nHigh-End Electronics\n20.0\n";
+        provideInput(simulatedInput);
+
+        when(mockProductDao.getProductById(productIdToUpdate)).thenReturn(product1);
+        when(mockProductDao.updateProduct(any(ProductInfo.class))).thenReturn(true);
+
+        productService.updateProductDetails(productIdToUpdate);
+
+        verify(mockProductDao).getProductById(productIdToUpdate);
+        verify(mockProductDao).updateProduct(argThat(p ->
+                p.getProductId().equals(productIdToUpdate) &&
+                p.getProductName().equals("Updated Laptop") &&
+                p.getUnitPrice() == 1300.0f &&
+                p.getTax() == 20.0f
+        ));
+    }
+
+    @Test
+    void updateProductDetails_productNotFound() {
+        String productIdToUpdate = "P_NON_EXIST";
+        provideInput(""); 
+
+        when(mockProductDao.getProductById(productIdToUpdate)).thenReturn(null);
+
+        productService.updateProductDetails(productIdToUpdate);
+
+        verify(mockProductDao).getProductById(productIdToUpdate);
+        verify(mockProductDao, never()).updateProduct(any(ProductInfo.class));
+    }
+    
+    @Test
+    void updateProductDetails_productExists_emptyInputsUsesExistingValues() {
+        String productIdToUpdate = "P001";
+        
+        String simulatedInput = "\n\n\n\n\n\n"; 
+        provideInput(simulatedInput);
+
+        ProductInfo originalProduct = new ProductInfo("P001", "Laptop", "Gaming Laptop", "pcs", 1200.0f, "Electronics", 18.0f, 10);
+        when(mockProductDao.getProductById(productIdToUpdate)).thenReturn(originalProduct);
+        when(mockProductDao.updateProduct(any(ProductInfo.class))).thenReturn(true);
+
+        productService.updateProductDetails(productIdToUpdate);
+
+        verify(mockProductDao).getProductById(productIdToUpdate);
+        verify(mockProductDao).updateProduct(argThat(p ->
+                p.getProductId().equals(originalProduct.getProductId()) &&
+                p.getProductName().equals(originalProduct.getProductName()) &&
+                p.getProductDescription().equals(originalProduct.getProductDescription()) &&
+                p.getUnit().equals(originalProduct.getUnit()) &&
+                p.getUnitPrice() == originalProduct.getUnitPrice() &&
+                p.getCategory().equals(originalProduct.getCategory()) &&
+                p.getTax() == originalProduct.getTax()
+        ));
+    }
+
+
+    @Test
+    void getAllProducts_returnsListFromDao() {
+        List<ProductInfo> expectedProducts = Arrays.asList(product1, product2);
+        when(mockProductDao.getAllProducts()).thenReturn(expectedProducts);
+
+        List<ProductInfo> actualProducts = productService.getAllProducts();
+
+        assertEquals(expectedProducts, actualProducts);
+        verify(mockProductDao).getAllProducts();
+    }
+
+    @Test
+    void getProductById_returnsProductFromDao() {
+        String productId = "P001";
+        when(mockProductDao.getProductById(productId)).thenReturn(product1);
+
+        ProductInfo actualProduct = productService.getProductById(productId);
+
+        assertEquals(product1, actualProduct);
+        verify(mockProductDao).getProductById(productId);
+    }
+    
+    @Test
+    void getProductById_returnsNullIfDaoReturnsNull() {
+        String productId = "P_NON_EXIST";
+        when(mockProductDao.getProductById(productId)).thenReturn(null);
+
+        ProductInfo actualProduct = productService.getProductById(productId);
+
+        assertNull(actualProduct);
+        verify(mockProductDao).getProductById(productId);
+    }
+
+    @Test
+    void printProductCatalog_callsDaoAndPrints() {
+        List<ProductInfo> products = Arrays.asList(product1, product2);
+        when(mockProductDao.getAllProducts()).thenReturn(products);
+
+        assertDoesNotThrow(() -> productService.printProductCatalog());
+
+        verify(mockProductDao).getAllProducts();
+    }
+
+    @Test
+    void addProducts_newProduct_success() {
+
+        String input = "P003\nNew Gadget\nCool new item\npcs\n50.0\nGadgets\n5.0\n";
+        provideInput(input);
+
+        when(mockProductDao.getProductById("P003")).thenReturn(null);
+
+        productService.addProducts();
+
+        verify(mockProductDao).getProductById("P003");
+        verify(mockProductDao).addProduct(argThat(p ->
+                p.getProductId().equals("P003") &&
+                p.getProductName().equals("New Gadget") &&
+                p.getUnitPrice() == 50.0f
+        ));
+    }
+    
+    @Test
+    void addProducts_productAlreadyExists_promptsForNewId() {
+        String input = "P001\nP004\nUnique Product\nUnique Desc\nitem\n200\nUniqueCat\n10\n";
+        provideInput(input);
+
+        when(mockProductDao.getProductById("P001")).thenReturn(product1); 
+        when(mockProductDao.getProductById("P004")).thenReturn(null);    
+
+        productService.addProducts();
+
+        verify(mockProductDao, times(1)).getProductById("P001");
+        verify(mockProductDao, times(1)).getProductById("P004");
+        verify(mockProductDao).addProduct(argThat(p -> p.getProductId().equals("P004")));
+    }
+
+}

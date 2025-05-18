@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Form Validation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for error messages */
+        .error-message {
+            color: red;
+            font-size: 0.875rem; /* text-sm */
+            margin-top: 0.25rem; /* mt-1 */
+        }
+        /* Style for input fields with errors */
+        .input-error {
+            border-color: red;
+        }
+        /* Simple message box for success/failure */
+        .message-box {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            font-weight: 500;
+        }
+        .message-box-success {
+            background-color: #d1fae5; /* bg-green-100 */
+            color: #065f46; /* text-green-700 */
+            border: 1px solid #6ee7b7; /* border-green-300 */
+        }
+        .message-box-error {
+            background-color: #fee2e2; /* bg-red-100 */
+            color: #b91c1c; /* text-red-700 */
+            border: 1px solid #fca5a5; /* border-red-300 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-700">Create Account</h1>
+
+        <div id="formMessage" class="message-box hidden"></div>
+
+        <form id="registrationForm" novalidate>
+            <div class="mb-4">
+                <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
+                <input type="text" id="username" name="username"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150"
+                       required>
+                <div id="usernameError" class="error-message"></div>
+            </div>
+
+            <div class="mb-4">
+                <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email Address</label>
+                <input type="email" id="email" name="email"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150"
+                       required>
+                <div id="emailError" class="error-message"></div>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                <input type="password" id="password" name="password"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150"
+                       required minlength="8">
+                <div id="passwordError" class="error-message"></div>
+            </div>
+
+            <div class="mb-6">
+                <label for="confirmPassword" class="block text-gray-700 text-sm font-semibold mb-2">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150"
+                       required>
+                <div id="confirmPasswordError" class="error-message"></div>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-150">
+                Register
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Get form and input elements
+        const form = document.getElementById('registrationForm');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const formMessageDiv = document.getElementById('formMessage');
+
+        // Minimum password length
+        const MIN_PASSWORD_LENGTH = 8;
+
+        // Event listener for form submission
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent default form submission
+            validateForm();
+        });
+
+        // --- Utility Functions for Validation ---
+
+        /**
+         * Displays an error message for a specific input field.
+         * @param {HTMLInputElement} inputElement - The input element to associate the error with.
+         * @param {string} message - The error message to display.
+         */
+        function showError(inputElement, message) {
+            const errorElement = document.getElementById(inputElement.id + 'Error');
+            if (errorElement) {
+                errorElement.textContent = message;
+            }
+            inputElement.classList.add('input-error'); // Add error class for styling
+            inputElement.classList.remove('border-gray-300'); // Remove default border
+            inputElement.classList.add('border-red-500'); // Add red border
+        }
+
+        /**
+         * Clears the error message for a specific input field.
+         * @param {HTMLInputElement} inputElement - The input element to clear the error for.
+         */
+        function clearError(inputElement) {
+            const errorElement = document.getElementById(inputElement.id + 'Error');
+            if (errorElement) {
+                errorElement.textContent = '';
+            }
+            inputElement.classList.remove('input-error');
+            inputElement.classList.remove('border-red-500');
+            inputElement.classList.add('border-gray-300');
+        }
+
+        /**
+         * Validates an email address using a regular expression.
+         * @param {string} email - The email string to validate.
+         * @returns {boolean} - True if the email is valid, false otherwise.
+         */
+        function isValidEmail(email) {
+            // Basic email regex - for more robust validation, consider a library
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        /**
+         * Displays a message at the top of the form (success or error).
+         * @param {string} message - The message to display.
+         * @param {boolean} isSuccess - True if it's a success message, false for error.
+         */
+        function showFormMessage(message, isSuccess) {
+            formMessageDiv.textContent = message;
+            formMessageDiv.className = 'message-box'; // Reset classes
+            if (isSuccess) {
+                formMessageDiv.classList.add('message-box-success');
+            } else {
+                formMessageDiv.classList.add('message-box-error');
+            }
+            formMessageDiv.classList.remove('hidden');
+        }
+
+        /**
+         * Hides the form message.
+         */
+        function hideFormMessage() {
+            formMessageDiv.classList.add('hidden');
+            formMessageDiv.textContent = '';
+            formMessageDiv.className = 'message-box hidden';
+        }
+
+
+        // --- Main Validation Function ---
+        function validateForm() {
+            let isValid = true;
+            hideFormMessage(); // Clear previous form messages
+
+            // 1. Validate Username
+            clearError(usernameInput);
+            if (usernameInput.value.trim() === '') {
+                showError(usernameInput, 'Username is required.');
+                isValid = false;
+            }
+
+            // 2. Validate Email
+            clearError(emailInput);
+            const emailValue = emailInput.value.trim();
+            if (emailValue === '') {
+                showError(emailInput, 'Email is required.');
+                isValid = false;
+            } else if (!isValidEmail(emailValue)) {
+                showError(emailInput, 'Please enter a valid email address.');
+                isValid = false;
+            }
+
+            // 3. Validate Password
+            clearError(passwordInput);
+            const passwordValue = passwordInput.value;
+            if (passwordValue === '') {
+                showError(passwordInput, 'Password is required.');
+                isValid = false;
+            } else if (passwordValue.length < MIN_PASSWORD_LENGTH) {
+                showError(passwordInput, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`);
+                isValid = false;
+            }
+
+            // 4. Validate Confirm Password
+            clearError(confirmPasswordInput);
+            const confirmPasswordValue = confirmPasswordInput.value;
+            if (confirmPasswordValue === '') {
+                showError(confirmPasswordInput, 'Please confirm your password.');
+                isValid = false;
+            } else if (passwordValue !== confirmPasswordValue) {
+                showError(confirmPasswordInput, 'Passwords do not match.');
+                isValid = false;
+            }
+
+            // If all validations pass
+            if (isValid) {
+                showFormMessage('Registration successful!', true);
+                // Here you would typically submit the form data to a server
+                // For this example, we'll just log it and reset the form
+                console.log('Form submitted successfully with data:', {
+                    username: usernameInput.value.trim(),
+                    email: emailInput.value.trim(),
+                    // password: passwordInput.value // Avoid logging passwords in real apps
+                });
+                form.reset(); // Optionally reset the form
+                // Clear all individual error styles after successful submission and reset
+                [usernameInput, emailInput, passwordInput, confirmPasswordInput].forEach(clearError);
+            } else {
+                showFormMessage('Please correct the errors in the form.', false);
+            }
+
+            return isValid;
+        }
+
+        // Add real-time validation feedback as the user types (optional but good UX)
+        usernameInput.addEventListener('input', () => {
+            if (usernameInput.value.trim() !== '') clearError(usernameInput);
+        });
+        emailInput.addEventListener('input', () => {
+            if (isValidEmail(emailInput.value.trim())) clearError(emailInput);
+        });
+        passwordInput.addEventListener('input', () => {
+            if (passwordInput.value.length >= MIN_PASSWORD_LENGTH) clearError(passwordInput);
+        });
+        confirmPasswordInput.addEventListener('input', () => {
+            if (confirmPasswordInput.value === passwordInput.value) clearError(confirmPasswordInput);
+        });
+
+    </script>
+</body>
+</html>

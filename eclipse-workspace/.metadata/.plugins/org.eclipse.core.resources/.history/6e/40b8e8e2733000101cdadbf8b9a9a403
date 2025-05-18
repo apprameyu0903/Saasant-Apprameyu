@@ -1,0 +1,149 @@
+package com.controller;
+
+import com.vo.CustomerDetails;
+import com.dao.CustomerDao;
+import java.util.List;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import com.google.gson.Gson;
+
+@WebServlet("/CustomerServlet")
+public class CustomerServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+	private CustomerDao customerDao = new CustomerDao();
+	private Gson gson = new Gson();
+
+	public CustomerServlet() {
+		super();
+	}
+
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String action = request.getParameter("action");
+		String forwardPage = "/customer_details.jsp"; 
+		if ("edit".equals(action) && request.getParameter("ajax") == null) {
+			String customerId = request.getParameter("id");
+			CustomerDetails customer = customerDao.getCustomerById(customerId);
+			request.setAttribute("customer", customer);
+			forwardPage = "/edit_customer.jsp";
+		} else if ("showAddForm".equals(action)) {
+			forwardPage = "/add_customer.jsp";
+		} else if ("delete".equals(action) && request.getParameter("ajax") == null) {
+			String customerId = request.getParameter("id");
+			customerDao.deleteCustomer(customerId);
+			response.sendRedirect("CustomerServlet?message=Customer+deleted+successfully");
+			return;
+		} else if ("deleteAjax".equals(action)) {
+			String customerId = request.getParameter("id");
+			boolean deleted = customerDao.deleteCustomer(customerId);
+			response.setContentType("application/json");
+			response.setCharacterEncoding("UTF-8");
+			PrintWriter out = response.getWriter();
+			if (deleted) {
+				out.print("{\"success\": true, \"message\": \"Customer deleted successfully.\"}");
+			} else {
+				out.print("{\"success\": false, \"message\": \"Error deleting customer.\"}");
+			}
+			out.flush();
+			return;
+		} else if ("getCustomerAjax".equals(action)) {
+			String customerId = request.getParameter("id");
+			CustomerDetails customer = customerDao.getCustomerById(customerId);
+			response.setContentType("application/json");
+			response.setCharacterEncoding("UTF-8");
+			PrintWriter out = response.getWriter();
+			if (customer != null) {
+				out.print(this.gson.toJson(customer));
+			} else {
+				out.print("{\"success\": false, \"message\": \"Customer not found.\"}");
+			}
+			out.flush();
+			return;
+        } else if ("searchCustomersAjax".equals(action)) {
+            String query = request.getParameter("query");
+            List<CustomerDetails> customers;
+            if (query != null && !query.trim().isEmpty()) {
+                customers = customerDao.searchCustomers(query);
+            } else {
+                customers = customerDao.getAllCustomers(); 
+            }
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter out = response.getWriter();
+            out.print(this.gson.toJson(customers));
+            out.flush();
+            return;
+		} else { 
+			List<CustomerDetails> customerList = customerDao.getAllCustomers();
+			request.setAttribute("customers", customerList);
+			request.setAttribute("successMessage", request.getParameter("message"));
+			request.setAttribute("errorMessage", request.getParameter("error"));
+			
+		}
+
+		RequestDispatcher dispatcher = request.getRequestDispatcher(forwardPage);
+		dispatcher.forward(request, response);
+	}
+
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String action = request.getParameter("action");
+		String redirectUrl = "CustomerServlet"; // Default redirect
+
+		if ("add".equals(action)) {
+			CustomerDetails customer = new CustomerDetails();
+			customer.setCustomerId(request.getParameter("customerId"));
+			customer.setCustomerName(request.getParameter("customerName"));
+			customer.setMobileNumber(request.getParameter("mobileNumber"));
+			customer.setCustomerLocation(request.getParameter("customerLocation"));
+			boolean added = customerDao.addCustomer(customer);
+			if (added) {
+				redirectUrl = "CustomerServlet?message=Customer+added+successfully";
+			} else {
+                request.setAttribute("customerData", customer);
+                request.setAttribute("errorMessage", "Failed to add customer. ID might already exist or data is invalid.");
+                RequestDispatcher dispatcher = request.getRequestDispatcher("/add_customer.jsp?action=showAddForm");
+                dispatcher.forward(request, response);
+                return;
+			}
+			response.sendRedirect(redirectUrl);
+		} else if ("update".equals(action) && request.getParameter("ajax") == null) {
+			CustomerDetails customer = new CustomerDetails();
+			customer.setCustomerId(request.getParameter("customerId"));
+			customer.setCustomerName(request.getParameter("customerName"));
+			customer.setMobileNumber(request.getParameter("mobileNumber"));
+			customer.setCustomerLocation(request.getParameter("customerLocation"));
+			boolean updated = customerDao.updateCustomer(customer);
+			if (updated) {
+				redirectUrl = "CustomerServlet?message=Customer+updated+successfully";
+			} else {
+				redirectUrl = "CustomerServlet?action=edit&id=" + customer.getCustomerId() + "&error=Failed+to+update+customer";
+			}
+			response.sendRedirect(redirectUrl);
+		} else if ("updateAjax".equals(action)) {
+			CustomerDetails customer = new CustomerDetails();
+			customer.setCustomerId(request.getParameter("customerId"));
+			customer.setCustomerName(request.getParameter("customerName"));
+			customer.setMobileNumber(request.getParameter("mobileNumber"));
+			customer.setCustomerLocation(request.getParameter("customerLocation"));
+			boolean updated = customerDao.updateCustomer(customer);
+			response.setContentType("application/json");
+			response.setCharacterEncoding("UTF-8");
+			PrintWriter out = response.getWriter();
+			if (updated) {
+				CustomerDetails updatedCustomerData = customerDao.getCustomerById(customer.getCustomerId());
+                out.print("{\"success\": true, \"message\": \"Customer updated successfully.\", \"customer\": " + this.gson.toJson(updatedCustomerData) + "}");
+			} else {
+				out.print("{\"success\": false, \"message\": \"Error updating customer.\"}");
+			}
+			out.flush();
+			return;
+		} else {
+			response.sendRedirect(redirectUrl); 
+		}
+	}
+}

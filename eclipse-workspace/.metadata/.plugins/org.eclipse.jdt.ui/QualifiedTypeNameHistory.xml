@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<qualifiedTypeNameHistroy>
+    <fullyQualifiedTypeName name="java.sql.ResultSet"/>
+    <fullyQualifiedTypeName name="com.dao.ProductDao"/>
+    <fullyQualifiedTypeName name="jdk.internal.org.jline.terminal.TerminalBuilder.SystemOutput"/>
+    <fullyQualifiedTypeName name="com.vo.CustomerDetails"/>
+    <fullyQualifiedTypeName name="com.service.CustomerService"/>
+    <fullyQualifiedTypeName name="com.service.ProductServiceInterface"/>
+    <fullyQualifiedTypeName name="com.vo.ProductInfo"/>
+    <fullyQualifiedTypeName name="com.dao.ProductDaoInterface"/>
+    <fullyQualifiedTypeName name="com.dao.CustomerDao"/>
+    <fullyQualifiedTypeName name="com.dao.CustomerDaoInterface"/>
+    <fullyQualifiedTypeName name="com.saasant.firstSpringProject.util.DBUtil"/>
+    <fullyQualifiedTypeName name="com.saasant.firstSpringProject.dao.CustomerDao"/>
+    <fullyQualifiedTypeName name="com.saasant.firstSpringProject.vo.CustomerDetails"/>
+    <fullyQualifiedTypeName name="com.saasant.firstSpringProject.vo.ProductInfo"/>
+    <fullyQualifiedTypeName name="org.springframework.web.bind.annotation.CrossOrigin"/>
+</qualifiedTypeNameHistroy>

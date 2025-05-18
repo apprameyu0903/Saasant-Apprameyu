@@ -1,0 +1,9 @@
+package com.dao;
+import com.vo.CustomerDetails;
+import com.vo.ProductInfo;
+public interface CustomerDaoInterface {
+	
+	boolean addCustomer(CustomerDetails customer);
+	
+
+}

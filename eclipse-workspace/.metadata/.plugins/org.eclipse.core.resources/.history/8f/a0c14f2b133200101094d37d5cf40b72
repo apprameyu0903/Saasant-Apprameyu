@@ -1,0 +1,67 @@
+package com.saasant.firstSpringProject.controller;
+
+import com.saasant.firstSpringProject.service.CustomerServiceInterface;
+import com.saasant.firstSpringProject.service.CustomerService; 
+import com.saasant.firstSpringProject.vo.CustomerDetails;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@CrossOrigin
+@RestController
+@RequestMapping("/api/customers") 
+public class CustomerController {
+
+    private final CustomerServiceInterface customerService = new CustomerService();
+
+
+    @GetMapping("/{customerId}")
+    public ResponseEntity<CustomerDetails> getCustomerById(@PathVariable String customerId) {
+        CustomerDetails customerDetails = customerService.getCustomerById(customerId);
+        if (customerDetails != null && customerDetails.getCustomerId() != null) {
+            return ResponseEntity.ok(customerDetails);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CustomerDetails>> getAllCustomers() {
+        List<CustomerDetails> customers = customerService.getAllCustomers();
+        return ResponseEntity.ok(customers);
+    }
+    
+    @PostMapping
+    public ResponseEntity<CustomerDetails> addCustomer(@RequestBody CustomerDetails customerDetails) {
+        CustomerDetails newCustomer = customerService.addCustomer(customerDetails);
+        if (newCustomer != null && newCustomer.getCustomerId() != null) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(newCustomer);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
+
+
+    @PutMapping("/{customerId}")
+    public ResponseEntity<CustomerDetails> updateCustomer(@PathVariable String customerId, @RequestBody CustomerDetails customerDetails) {
+        CustomerDetails updatedCustomer = customerService.updateCustomer(customerId, customerDetails);
+        if (updatedCustomer != null) {
+            return ResponseEntity.ok(updatedCustomer);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
+        }
+    }
+
+    @DeleteMapping("/{customerId}")
+    public ResponseEntity<String> deleteCustomer(@PathVariable String customerId) {
+        CustomerDetails existingCustomer = customerService.getCustomerById(customerId);
+        if (existingCustomer == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        customerService.deleteCustomer(customerId);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).build("Deleted");
+    }
+}

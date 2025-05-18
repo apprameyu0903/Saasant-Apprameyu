@@ -1,0 +1,123 @@
+package com.controller;
+import com.vo.CustomerDetails;
+import com.dao.CustomerDao;
+import java.util.*;
+import java.io.IOException;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * Servlet implementation class CustomerServlet
+ */
+@WebServlet("/CustomerServlet")
+public class CustomerServlet extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+	private CustomerDao customerDao = new CustomerDao();
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public CustomerServlet() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		
+		String action = request.getParameter("action");
+        String forwardPage = "/customerList.jsp"; // Default: show the list
+
+        try {
+            if ("edit".equals(action)) {
+                // Action: Show Edit Form
+                String customerId = request.getParameter("CusomterId");
+                if (customerId != null && !customerId.trim().isEmpty()) {
+                    CustomerDetails customer = customerDao.getCustomerById(customerId);
+                    if (customer != null) {
+                        request.setAttribute("customer", customer);
+                        forwardPage = "/edit_customer.jsp";
+                    } else {
+                        request.setAttribute("errorMessage", "Customer not found (ID: " + customerId + ")");
+                        List<CustomerDetails> customerList = customerDao.getAllCustomers();
+                        request.setAttribute("customers", customerList);
+                    }
+                } else {
+                     request.setAttribute("errorMessage", "Missing or invalid customer ID for edit");
+                     List<CustomerDetails> customerList = customerDao.getAllCustomers();
+                     request.setAttribute("customers", customerList);
+                }
+            } else if ("showAddForm".equals(action)) {
+                 forwardPage = "/add_customer.jsp";
+
+            } else if ("delete".equals(action)) {
+                 String customerId = request.getParameter("CustomerId");
+                 String redirectUrl = "CustomerServlet"; 
+
+                 if (customerId != null && !customerId.trim().isEmpty()) {
+                    boolean deleted = customerDao.deleteCustomer(customerId);
+                    if (deleted) {
+                        redirectUrl = "CustomerServlet?message=Customer+deleted+successfully";
+                    } else {
+                        
+                        redirectUrl = "CustomerServlet?error=Failed+to+delete+customer+(ID:" + customerId + ")";
+                    }
+                 } else {
+                     redirectUrl = "CustomerServlet?error=Missing+or+invalid+customer+ID+for+delete";
+                 }
+                 response.sendRedirect(redirectUrl); 
+                 return; 
+
+            } else {
+                
+                List<CustomerDetails> customerList = customerDao.getAllCustomers();
+                request.setAttribute("customers", customerList);
+                request.setAttribute("successMessage", request.getParameter("message"));
+                request.setAttribute("errorMessage", request.getParameter("error"));
+            }
+
+            RequestDispatcher dispatcher = request.getRequestDispatcher(forwardPage);
+            dispatcher.forward(request, response);
+
+        } catch (Exception e) {
+            // Basic error handling for unexpected issues
+            e.printStackTrace(); // Log the full error
+            request.setAttribute("errorMessage", "An unexpected error occurred: " + e.getMessage());
+            // Attempt to show the list page even on error, but with the error message
+            try {
+                 List<CustomerDetails> customerList = customerDao.getAllCustomers();
+                 request.setAttribute("customers", customerList);
+            } catch (Exception ex) {
+                 // Ignore error fetching list if already in error state
+            }
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/customer_details.jsp");
+            dispatcher.forward(request, response);
+        }
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		CustomerDetails customer = new CustomerDetails();
+		customer.setCustomerId(request.getParameter("customerId"));
+        customer.setCustomerName(request.getParameter("customerName"));
+        customer.setMobileNumber(request.getParameter("mobileNumber"));
+        customer.setCustomerLocation(request.getParameter("customerLocation"));
+        
+        customerDao.addCustomer(customer);
+        
+        
+		
+	}
+
+}

@@ -1,0 +1,2 @@
+spring.application.name=firstSpringProject
+spring.port=8081

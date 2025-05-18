@@ -1,0 +1,71 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Customer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css"> <%-- Link to your CSS file --%>
+</head>
+<body>
+
+    <header class="page-header">
+        <div class="container header-content">
+            <h1 class="header-title">MANAGE CUSTOMER</h1>
+            <div class="header-icon">
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content-wrapper">
+
+            <div class="title-section">
+                <h2 class="page-title">ADD NEW CUSTOMER</h2>
+            </div>
+            <form class="customer-form" id="addCustomerForm" action="process_add_customer.jsp" method="post">
+                <div class="form-group">
+                    <label for="cust-id" class="form-label">CUSTOMER ID:</label>
+                    <input type="text" id="cust-id" name="customerId" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="cust-name" class="form-label">CUSTOMER NAME:</label>
+                    <input type="text" id="cust-name" name="customerName" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="cust-phone" class="form-label">PHONE:</label>
+                    <input type="tel" id="cust-phone" name="mobileNumber" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="cust-address" class="form-label">LOCATION:</label>
+                    <input id="cust-address" name="custAddress" class="form-input">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">SAVE CUSTOMER</button>
+                    <button type="reset" class="reset-btn">RESET</button> 
+                    <a href="customer_details.jsp" class="cancel-btn-link">
+                        <button type="button" class="cancel-btn">CANCEL</button>
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <div class="container">
+             &copy; 2025 Your Company. All rights reserved.
+        </div>
+    </footer>
+
+</body>
+</html>

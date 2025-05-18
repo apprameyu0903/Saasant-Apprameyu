@@ -1,0 +1,254 @@
+package com.dao;
+
+import com.util.DBUtil;
+import com.vo.CustomerDetails;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class CustomerDaoTest {
+
+    @Mock
+    private Connection mockConnection;
+    @Mock
+    private PreparedStatement mockPreparedStatement;
+    @Mock
+    private ResultSet mockResultSet;
+    @Mock
+    private Statement mockStatement;
+
+    @InjectMocks
+    private CustomerDao customerDao;
+
+    private CustomerDetails customer;
+
+    @BeforeEach
+    void setUp() {
+        customer = new CustomerDetails("CUST001", "John Doe", "1234567890", "New York");
+    }
+
+    @Test
+    void addCustomer_success() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+
+            // Mock getCustomerById to return null (customer doesn't exist)
+            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet); // For the getCustomerById check
+            when(mockResultSet.next()).thenReturn(false); // Simulate customer not found
+
+            // Mock executeUpdate for the insert operation
+            when(mockPreparedStatement.executeUpdate()).thenReturn(1); // Simulate 1 row affected for insert
+
+            boolean result = customerDao.addCustomer(customer);
+
+            assertTrue(result);
+            verify(mockPreparedStatement, times(1)).setString(1, customer.getCustomerId());
+            verify(mockPreparedStatement, times(1)).setString(2, customer.getCustomerName());
+            verify(mockPreparedStatement, times(1)).setString(3, customer.getMobileNumber());
+            verify(mockPreparedStatement, times(1)).setString(4, customer.getCustomerLocation());
+            verify(mockPreparedStatement, times(1)).executeUpdate(); // For insert
+        }
+    }
+
+    @Test
+    void addCustomer_failure_customerExists() throws SQLException {
+         try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            // This PreparedStatement is for the getCustomerById check within addCustomer
+            when(mockConnection.prepareStatement(startsWith("SELECT * FROM customers WHERE customer_id = ?"))).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+            when(mockResultSet.next()).thenReturn(true); // Simulate customer found
+
+            boolean result = customerDao.addCustomer(customer);
+
+            assertFalse(result);
+            verify(mockPreparedStatement, times(1)).setString(1, customer.getCustomerId());
+            verify(mockPreparedStatement, times(1)).executeQuery();
+            verify(mockPreparedStatement, never()).executeUpdate(); // Insert should not happen
+        }
+    }
+
+
+    @Test
+    void addCustomer_failure_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+
+            boolean result = customerDao.addCustomer(customer);
+
+            assertFalse(result);
+        }
+    }
+
+    @Test
+    void getCustomerById_found() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+            when(mockResultSet.next()).thenReturn(true); // Customer found
+            when(mockResultSet.getString("customer_name")).thenReturn(customer.getCustomerName());
+            when(mockResultSet.getString("customer_mobile")).thenReturn(customer.getMobileNumber());
+            when(mockResultSet.getString("customer_location")).thenReturn(customer.getCustomerLocation());
+            // CustomerId is set from the input parameter in the actual method logic, not from result set typically for getById
+
+            CustomerDetails foundCustomer = customerDao.getCustomerById(customer.getCustomerId());
+
+            assertNotNull(foundCustomer);
+            assertEquals(customer.getCustomerName(), foundCustomer.getCustomerName());
+            assertEquals(customer.getMobileNumber(), foundCustomer.getMobileNumber());
+            assertEquals(customer.getCustomerLocation(), foundCustomer.getCustomerLocation());
+            verify(mockPreparedStatement, times(1)).setString(1, customer.getCustomerId());
+        }
+    }
+
+    @Test
+    void getCustomerById_notFound() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
+            when(mockResultSet.next()).thenReturn(false); // Customer not found
+
+            CustomerDetails foundCustomer = customerDao.getCustomerById("CUST_NON_EXIST");
+
+            assertNull(foundCustomer);
+        }
+    }
+    
+    @Test
+    void getCustomerById_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+
+            CustomerDetails foundCustomer = customerDao.getCustomerById(customer.getCustomerId());
+            assertNull(foundCustomer);
+        }
+    }
+
+    @Test
+    void updateCustomer_success() throws SQLException {
+         try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(1); // 1 row updated
+
+            CustomerDetails updatedCustomer = new CustomerDetails(customer.getCustomerId(), "Jane Doe", "0987654321", "London");
+            boolean result = customerDao.updateCustomer(updatedCustomer);
+
+            assertTrue(result);
+            verify(mockPreparedStatement, times(1)).setString(1, updatedCustomer.getCustomerName());
+            verify(mockPreparedStatement, times(1)).setString(2, updatedCustomer.getMobileNumber());
+            verify(mockPreparedStatement, times(1)).setString(3, updatedCustomer.getCustomerLocation()); // Corrected index based on CustomerDao
+            verify(mockPreparedStatement, times(1)).setString(4, updatedCustomer.getCustomerId()); // Corrected index
+        }
+    }
+    
+    @Test
+    void updateCustomer_failure_noRowUpdated() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(0); // 0 rows updated
+
+            boolean result = customerDao.updateCustomer(customer);
+
+            assertFalse(result);
+        }
+    }
+
+    @Test
+    void updateCustomer_failure_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+
+            boolean result = customerDao.updateCustomer(customer);
+
+            assertFalse(result);
+        }
+    }
+
+
+    @Test
+    void deleteCustomer_success() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(1); // 1 row deleted
+
+            boolean result = customerDao.deleteCustomer(customer.getCustomerId());
+
+            assertTrue(result);
+            verify(mockPreparedStatement, times(1)).setString(1, customer.getCustomerId());
+        }
+    }
+    
+    @Test
+    void deleteCustomer_failure_noRowDeleted() throws SQLException {
+         try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+            when(mockPreparedStatement.executeUpdate()).thenReturn(0); // 0 rows deleted
+
+            boolean result = customerDao.deleteCustomer(customer.getCustomerId());
+
+            assertFalse(result);
+        }
+    }
+
+
+    @Test
+    void deleteCustomer_failure_sqlException() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.prepareStatement(anyString())).thenThrow(new SQLException("DB error"));
+
+            boolean result = customerDao.deleteCustomer(customer.getCustomerId());
+
+            assertFalse(result);
+        }
+    }
+
+    @Test
+    void getAllCustomers_success() throws SQLException {
+        try (MockedStatic<DBUtil> mockedDBUtil = Mockito.mockStatic(DBUtil.class)) {
+            mockedDBUtil.when(DBUtil::getConnection).thenReturn(mockConnection);
+            when(mockConnection.createStatement()).thenReturn(mockStatement);
+            when(mockStatement.executeQuery(anyString())).thenReturn(mockResultSet);
+
+            // Simulate two customers in the result set
+            when(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
+            when(mockResultSet.getString("customer_id"))
+                .thenReturn("CUST001").thenReturn("CUST002");
+            when(mockResultSet.getString("customer_name"))
+                .thenReturn("John Doe").thenReturn("Jane Smith");
+            when(mockResultSet.getString("customer_mobile"))
+                .thenReturn("1234567890").thenReturn("0987654321");
+            when(mockResultSet.getString("customer_location"))
+                .thenReturn("New York").thenReturn("London");
+            
+            List<CustomerDetails> customers = customerDao.getAllCustomers();
+
+            assertNotNull(customers);
+            assertEquals(2,

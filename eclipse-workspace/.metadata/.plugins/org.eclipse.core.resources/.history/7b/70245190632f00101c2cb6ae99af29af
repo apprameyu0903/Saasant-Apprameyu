@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Customer Form</title>
+</head>
+<style>
+
+.header-class{text-align: center}
+
+
+.flex-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+
+        }
+
+.flex-box {
+    width: 250px;
+    height: 100px;
+    border: 2px solid #000;
+    background-color: blue;
+    color: white;
+}
+
+</style>
+<body>
+<div class="header-class">
+<h1>Welcome to Saasant Billing System</h1>
+</div>
+
+<h2>Enter Customer Details</h2>
+	<div>
+    <form action="WebApplication" method="post">
+    	<div class=formFields>
+        <label>Customer ID:</label>
+        <input type="text" name="customerId" required><br><br>
+        </div>
+        <div class=formFields>
+        <label>Name:</label>
+        <input type="text" name="customerName" required><br><br>
+        </div>
+        <div class=formFields>
+        <label>Mobile Number:</label>
+        <input type="text" name="customerMobile" required pattern="[0-9]{10}" title="Enter 10-digit mobile number"><br><br>
+        </div>
+        <div class=formFields>
+        <label>Location:</label>
+        <input type="text" name="customerLocation" required><br><br>
+        </div>
+        <input type="submit" value="Submit">
+    </form>
+	</div>
+
+
+
+</body>
+</html>
