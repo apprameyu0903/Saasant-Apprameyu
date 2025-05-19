@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.saasant.firstSpringProject.FirstSpringProjectApplication;
 import com.saasant.firstSpringProject.dao.CustomerDaoInterface;
+import com.saasant.firstSpringProject.exception.CustomerNotFoundException;
 
 @Service
 public class CustomerService implements CustomerServiceInterface {
@@ -50,7 +51,7 @@ public class CustomerService implements CustomerServiceInterface {
         if (existingCustomer == null) {
         	log.warn("Customer not found with ID: {}. Cannot update.", customerId);
             System.out.println("Customer not found with ID: " + customerId + ". Cannot update.");
-            return null;
+            throw new CustomerNotFoundException("Customer not found with id: " + customerId);
         }
 
         customerUpdates.setCustomerId(customerId); 
@@ -72,6 +73,12 @@ public class CustomerService implements CustomerServiceInterface {
 			log.warn("Customer ID for deletion cannot be null or empty.");
             System.out.println("Customer ID for deletion cannot be null or empty.");
             return;
+        }
+		
+		CustomerDetails existingCustomer = customerDao.getCustomerById(customerId); 
+        if (existingCustomer == null) {
+            log.warn("Customer not found with ID: {}. Cannot delete.", customerId);
+            throw new CustomerNotFoundException("Customer not found with ID: " + customerId + ". Cannot delete.");
         }
         if (customerDao.deleteCustomer(customerId)) {
         	log.info("Customer deleted successfully: {}", customerId);
@@ -98,6 +105,19 @@ public class CustomerService implements CustomerServiceInterface {
             System.out.println("Customer ID for retrieval cannot be null or empty.");
             return null;
         }
-		return customerDao.getCustomerById(customerId);
+		CustomerDetails customer = customerDao.getCustomerById(customerId);
+		if(customer == null) {
+			log.warn("No customer founud with ID: {}",customerId);
+			throw new CustomerNotFoundException("Customer not found with ID: " + customerId + ". Cannot delete.");
+		}
+		return customer;
 	}
+	
+	@Override
+    public List<CustomerDetails> searchCustomers(String query) {
+        log.info("Service: Searching customers with query: '{}'", query);
+        List<CustomerDetails> customers = customerDao.searchCustomers(query);
+        log.debug("Service: Found {} customers for query: '{}'", customers.size(), query);
+        return customers;
+    }
 }

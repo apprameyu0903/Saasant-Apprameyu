@@ -39,10 +39,16 @@ public class CustomerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CustomerDetails>> getAllCustomers() {
-    	log.info("API: Request to get all customers.");
-        List<CustomerDetails> customers = customerService.getAllCustomers();
-        log.debug("API: Returning {} customers.", customers.size());
+    public ResponseEntity<List<CustomerDetails>> getAllOrSearchCustomers(@RequestParam(name = "query", required = false) String searchQuery) {
+        log.info("API: Request to get customers. Query: '{}'", searchQuery);
+        List<CustomerDetails> customers;
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+            customers = customerService.searchCustomers(searchQuery.trim());
+            log.debug("API: Returning {} customers based on search query: '{}'", customers.size(), searchQuery);
+        } else {
+            customers = customerService.getAllCustomers();
+            log.debug("API: Returning all {} customers (no query).", customers.size());
+        }
         return ResponseEntity.ok(customers);
     }
     
