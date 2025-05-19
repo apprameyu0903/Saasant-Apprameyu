@@ -103,10 +103,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script th:inline="javascript">
-    /*<![CDATA[*/
-    // If API_BASE_URL needs to be context-aware, use Thymeleaf:
-    // const API_BASE_URL = /*[[@{/api/customers}]]*/ 'http://localhost:8081/api/customers';
-    // For now, using the hardcoded version from your original script:
     const API_BASE_URL = 'http://localhost:8081/api/customers';
 
     $(document).ready(initializePage);
@@ -137,7 +133,7 @@
 
     function showAlertRevised(messageText, alertType) {
         const alertBoxArea = $("#ajaxAlertPlaceholder");
-        alertBoxArea.html(''); // Clear previous alerts
+        alertBoxArea.html('');
         const newAlertHtml =
             `<div class="alert alert-${alertType} alert-dismissible fade show" role="alert">
                 ${messageText}
@@ -151,7 +147,7 @@
 
     function handleCustomerSearchInputKeyup() {
         const searchInputValue = $("#customerSearchInput").val().trim().toLowerCase();
-        getAndShowCustomers(searchInputValue); // This will also handle the suggestion box update
+        getAndShowCustomers(searchInputValue); 
     }
 
     function getAndShowCustomers(searchText) {
@@ -165,9 +161,9 @@
             data: ajaxData,
             dataType: "json",
             success: function(customersFromServer) {
-                fillCustomerTable(customersFromServer); // Populates table
+                fillCustomerTable(customersFromServer); 
 
-                if (searchText && $("#customerSearchInput").is(":focus")) { // Show suggestions only if input has focus and there's text
+                if (searchText && $("#customerSearchInput").is(":focus")) { 
                     fillSuggestionsBox(customersFromServer, searchText);
                 } else {
                     $("#customerSuggestionsDropdown").html("").hide();
@@ -176,7 +172,7 @@
             error: function(xhr) {
                 console.error("AJAX Error fetching customers:", xhr.status, xhr.responseText);
                 showAlertRevised("Oops! Something went wrong while fetching customer data.", "danger");
-                $("#customerTable tbody").html(''); // Clear table body
+                $("#customerTable tbody").html(''); 
                 showNoResultsMessageInTable("Error loading customer data. Please try again.");
             }
         });
@@ -184,8 +180,8 @@
 
     function fillCustomerTable(customersList) {
         const tableBodyElement = $("#customerTable tbody");
-        tableBodyElement.empty(); // Clear existing rows
-        $("#noResultsRowWrapper").hide(); // Hide the dedicated no results message area
+        tableBodyElement.empty();
+        $("#noResultsRowWrapper").hide();
 
         if (customersList && customersList.length > 0) {
             customersList.forEach(function(oneCustomer, index) {
@@ -193,8 +189,6 @@
                 const displayName = oneCustomer.customerName || 'N/A';
                 const displayMobile = oneCustomer.mobileNumber || 'N/A';
                 const displayLocation = oneCustomer.customerLocation || 'N/A';
-                
-                // Use actual ID for the row if available, otherwise a temporary one for rows that might lack a proper ID from server (shouldn't happen ideally)
                 const rowId = oneCustomer.customerId ? 'customerRow-' + oneCustomer.customerId : 'temp-customerRow-' + index;
 
                 var tableRowHtml = `<tr id="${rowId}">`;
@@ -203,7 +197,6 @@
                 tableRowHtml += `<td class="mobile">${displayMobile}</td>`;
                 tableRowHtml += `<td class="location">${displayLocation}</td>`;
                 tableRowHtml += `<td>`;
-                // Ensure data-id is always set, even if customerId is null for some reason, to avoid 'undefined' in JS later
                 tableRowHtml += `<a class="action-link edit-link text-primary mr-2" href="#" data-id="${oneCustomer.customerId || ''}">Edit</a>`;
                 tableRowHtml += `<a class="action-link delete-link text-danger" href="#" data-id="${oneCustomer.customerId || ''}">Delete</a>`;
                 tableRowHtml += `</td>`;
@@ -217,7 +210,6 @@
         }
     }
 
-    // Updated to show message within the table structure
     function showNoResultsMessageInTable(message) {
         const tableBodyElement = $("#customerTable tbody");
         tableBodyElement.html(`<tr id="noResultsRowDynamic"><td colspan="5" class="text-center">${message}</td></tr>`);
@@ -231,17 +223,15 @@
         if (currentSearchText && currentSearchText.length > 0 && customersList && customersList.length > 0) {
             let displayedCount = 0;
             const maxSuggestions = 7;
-            // Filter more robustly, ensuring properties exist before calling toLowerCase()
             const relevantCustomers = customersList.filter(customer =>
                 (customer.customerName && typeof customer.customerName.toLowerCase === 'function' && customer.customerName.toLowerCase().includes(currentSearchText)) ||
                 (customer.customerId && String(customer.customerId).toLowerCase().includes(currentSearchText)) ||
-                (customer.mobileNumber && String(customer.mobileNumber).includes(currentSearchText)) || // mobile typically doesn't need toLowerCase
+                (customer.mobileNumber && String(customer.mobileNumber).includes(currentSearchText)) ||
                 (customer.customerLocation && typeof customer.customerLocation.toLowerCase === 'function' && customer.customerLocation.toLowerCase().includes(currentSearchText))
             );
 
             for (let i = 0; i < relevantCustomers.length && displayedCount < maxSuggestions; i++) {
                 const oneCustomer = relevantCustomers[i];
-                // Ensure customerId is available for data-id
                 if (oneCustomer.customerId !== null && oneCustomer.customerId !== undefined) {
                     const suggestionLinkHtml =
                         `<a href="#" class="list-group-item list-group-item-action suggestion-item" data-id="${oneCustomer.customerId}" data-name="${oneCustomer.customerName || ''}">
@@ -260,16 +250,13 @@
     function handleSuggestionItemClick(event) {
         event.preventDefault();
         const customerName = $(this).data("name");
-        const customerId = $(this).data("id"); // Get ID to potentially search by ID if name is not unique
-        $("#customerSearchInput").val(customerName); // Populate search bar with selected name
+        const customerId = $(this).data("id");
+        $("#customerSearchInput").val(customerName); 
         $("#customerSuggestionsDropdown").empty().hide();
-        // Refetch specifically for this customer or filter existing list if comprehensive
-        // For simplicity, re-triggering search with the name. Ideally, you might want to search by ID.
         getAndShowCustomers(customerName.toLowerCase());
     }
 
     function handleDocumentClickForSuggestions(event) {
-        // If click is outside search bar and suggestions dropdown, hide suggestions
         if (!$(event.target).closest(".search-bar-container").length) {
             $("#customerSuggestionsDropdown").empty().hide();
         }
@@ -277,18 +264,15 @@
 
     function handleCustomerSearchInputFocus() {
         const currentSearchText = $("#customerSearchInput").val().trim().toLowerCase();
-        // Optionally, reshow suggestions if there's text (e.g., if user clicks back into the input)
         if (currentSearchText.length >= 1) {
-             getAndShowCustomers(currentSearchText); // This will call fillSuggestionsBox if results are found
+             getAndShowCustomers(currentSearchText);
         }
     }
 
     function handleDeleteLinkClick(event) {
         event.preventDefault();
         const customerIdToDelete = $(this).data("id");
-        const customerName = $(this).closest("tr").find(".name").text() || "this customer"; // Fallback name
-
-        // Check for valid ID before proceeding
+        const customerName = $(this).closest("tr").find(".name").text() || "this customer";
         if (!customerIdToDelete || String(customerIdToDelete).trim() === "" || String(customerIdToDelete).toLowerCase() === "null" || String(customerIdToDelete).toLowerCase() === "undefined") {
             showAlertRevised("Cannot delete: Customer ID is missing or invalid.", "danger");
             console.warn("Attempted to delete with invalid ID:", customerIdToDelete);
@@ -304,9 +288,8 @@
                 type: "DELETE",
                 success: function(response, status, xhr) {
                     console.log("Delete successful for ID:", customerIdToDelete, "Status:", status);
-                    $(`#customerRow-${customerIdToDelete}`).remove(); // Remove the specific row
+                    $(`#customerRow-${customerIdToDelete}`).remove(); 
                     showAlertRevised(`Customer ${customerName} (ID: ${customerIdToDelete}) deleted successfully.`, "success");
-                    // Check if table is empty and show message
                     if ($("#customerTable tbody tr").length === 0) {
                         showNoResultsMessageInTable("No customers available.");
                     }
@@ -371,13 +354,10 @@
         event.preventDefault();
         const customerId = $("#editCustomerId").val();
         const customerData = {
-            // customerId: customerId, // Usually ID is part of URL, not body for PUT, but depends on API design
             customerName: $("#editCustomerName").val(),
             mobileNumber: $("#editMobileNumber").val(),
             customerLocation: $("#editCustomerLocation").val()
         };
-
-        // Validate ID from hidden field before making AJAX call
         if (!customerId || String(customerId).trim() === "" || String(customerId).toLowerCase() === "null" || String(customerId).toLowerCase() === "undefined") {
             showAlertRevised("Cannot update: Customer ID is missing in the form.", "danger");
             console.error("Update form submitted with invalid/missing customer ID from #editCustomerId.");
@@ -389,10 +369,9 @@
             type: "PUT",
             contentType: "application/json",
             data: JSON.stringify(customerData),
-            dataType: "json", // Expect JSON response from server
+            dataType: "json",
             success: function(updatedCustomerInfo) {
                 $("#editCustomerModal").modal("hide");
-                // Use the name from the response as it's the most up-to-date
                 const updatedName = updatedCustomerInfo.customerName || "N/A";
                 showAlertRevised(`Customer ${updatedName} (ID: ${updatedCustomerInfo.customerId}) updated successfully.`, "success");
 
@@ -402,7 +381,6 @@
                     customerRowInTable.find(".mobile").text(updatedCustomerInfo.mobileNumber || "N/A");
                     customerRowInTable.find(".location").text(updatedCustomerInfo.customerLocation || "N/A");
                 } else {
-                    // If row was somehow not found (e.g., ID changed, unlikely for PUT), refresh the whole list
                     console.warn(`Row for updated customer ID ${updatedCustomerInfo.customerId} not found. Refreshing list.`);
                     getAndShowCustomers("");
                 }
@@ -414,9 +392,8 @@
                     errorMsg = xhr.responseJSON.message;
                 } else if (xhr.status === 404) {
                      errorMsg = "Customer not found for update (404).";
-                } else if (xhr.status === 400) { // Bad Request (e.g. validation error on server)
+                } else if (xhr.status === 400) { 
                      errorMsg = "Invalid data submitted for update (400). Please check all fields.";
-                     // You could attempt to parse xhr.responseJSON for specific field errors here if your API provides them
                 } else if (xhr.statusText) {
                     errorMsg += ` Server responded: ${xhr.statusText} (Status: ${xhr.status})`;
                 }

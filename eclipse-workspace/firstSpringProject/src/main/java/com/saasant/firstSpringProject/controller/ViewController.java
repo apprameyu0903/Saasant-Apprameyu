@@ -16,4 +16,4 @@ public class ViewController {
     public String showAddCustomerPage() {
         return "add_customer";
     }
-}
+}  

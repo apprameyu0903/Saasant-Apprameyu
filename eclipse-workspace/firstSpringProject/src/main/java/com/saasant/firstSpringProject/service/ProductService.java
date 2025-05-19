@@ -1,37 +1,17 @@
 package com.saasant.firstSpringProject.service;
+
 import java.util.*;
-import com.saasant.firstSpringProject.dao.ProductDao;
-
+import com.saasant.firstSpringProject.dao.ProductDaoInterface; 
 import com.saasant.firstSpringProject.vo.ProductInfo;
-
 public class ProductService implements ProductServiceInterface {
 
-	private ProductDao prods;
-	Scanner sc = new Scanner(System.in);
-	
-	
-	public ProductService() {
-        prods = new ProductDao();  
+    private final ProductDaoInterface prods;
+    public ProductService(ProductDaoInterface prods) { 
+        this.prods = prods;
     }
-	
-	private List<ProductInfo> productCatalog;
-	
-	public void updateProductDetails(String productId) {
-        ProductInfo product = prods.getProductById(productId);
-        if (product == null) {
-            System.out.println("❌ Product not found.");
-            return;
-        }
-        ProductInfo updatedProduct = getUpdatedProductInfo(product);
-        boolean success = prods.updateProduct(updatedProduct);
-        if (success) {
-            System.out.println("✅ Product updated successfully.");
-        } else {
-            System.out.println("❌ Failed to update product.");
-        }
-    }
-	
-	private ProductInfo getUpdatedProductInfo(ProductInfo existingProduct) {
+
+    private ProductInfo getUpdatedProductInfo(ProductInfo existingProduct) {
+        Scanner sc = new Scanner(System.in); 
         System.out.println("Editing product: " + existingProduct.getProductName());
 
         System.out.print("Enter New Product Name (" + existingProduct.getProductName() + "): ");
@@ -57,42 +37,65 @@ public class ProductService implements ProductServiceInterface {
         System.out.print("Enter New Tax (%) (" + existingProduct.getTax() + "): ");
         String taxInput = sc.nextLine();
         float tax = taxInput.isEmpty() ? existingProduct.getTax() : Float.parseFloat(taxInput);
-
-        return new ProductInfo(existingProduct.getProductId(), name, desc, unit, price, category, tax);
+        return new ProductInfo(existingProduct.getProductId(), name, desc, unit, price, category, tax, existingProduct.getQuantity());
     }
-	
-	public List<ProductInfo> getAllProducts() {
+
+
+    @Override
+    public void updateProductDetails(String productId) {
+        ProductInfo product = prods.getProductById(productId);
+        if (product == null) {
+            System.out.println("❌ Product not found.");
+            return;
+        }
+        // The getUpdatedProductInfo now creates its own scanner
+        ProductInfo updatedProduct = getUpdatedProductInfo(product);
+        boolean success = prods.updateProduct(updatedProduct);
+        if (success) {
+            System.out.println("✅ Product updated successfully.");
+        } else {
+            System.out.println("❌ Failed to update product.");
+        }
+    }
+
+    @Override
+    public List<ProductInfo> getAllProducts() {
         return prods.getAllProducts();
     }
-	
-	public ProductInfo getProductById(String productId) {
+
+    @Override
+    public ProductInfo getProductById(String productId) {
         return prods.getProductById(productId);
     }
 
-	public void printProductCatalog() {
-		// TODO Auto-generated method stub
-		productCatalog = prods.getAllProducts();
-		System.out.println("\nProduct Catalog:");
+    @Override
+    public void printProductCatalog() {
+        List<ProductInfo> productCatalog = prods.getAllProducts(); 
+        System.out.println("\nProduct Catalog:");
         System.out.println("ID        Description               Price     Tax(%)");
         System.out.println("-------------------------------------------------------");
         for (ProductInfo p : productCatalog) {
             String line = p.getProductId() + "    " + String.format("%-25s", p.getProductDescription()) + "₹" + String.format("%.2f", p.getUnitPrice()) + "   " + String.format("%.2f", p.getTax()) + "%";
             System.out.println(line);
         }
-		
-	}
+    }
 
-	@Override
-	public void addProducts() {
-		// TODO Auto-generated method stub
-		System.out.println("\nEnter New Product Details:");
+    @Override
+    public void addProducts() {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\nEnter New Product Details:");
         System.out.print("Enter Product ID: ");
         String newProductId = sc.nextLine();
         ProductInfo existingProduct = prods.getProductById(newProductId);
         if(existingProduct != null) {
-        	System.out.println("Product already exists");
-        	System.out.print("Enter Product ID: ");
+            System.out.println("Product already exists");
+            System.out.print("Enter Product ID: "); // Prompt again if exists
             newProductId = sc.nextLine();
+             existingProduct = prods.getProductById(newProductId); // Check again
+             if(existingProduct != null) {
+                 System.out.println("Product still exists. Aborting add.");
+                 return;
+             }
         }
         System.out.print("Enter Product Name: ");
         String newProductName = sc.nextLine();
@@ -108,10 +111,8 @@ public class ProductService implements ProductServiceInterface {
         System.out.print("Enter Tax: %");
         float newTax = sc.nextFloat();
         sc.nextLine();
-        ProductInfo newProduct = new ProductInfo(newProductId, newProductName, newProductDescription, productUnit, newUnitPrice, newProductCategory, newTax);
+        ProductInfo newProduct = new ProductInfo(newProductId, newProductName, newProductDescription, productUnit, newUnitPrice, newProductCategory, newTax, 1); // Default quantity
         prods.addProduct(newProduct);
         System.out.println("Product added successfully!");
-		
-	}
-
+    }
 }

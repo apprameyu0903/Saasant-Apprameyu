@@ -28,7 +28,7 @@ public class CustomerController {
         if (customer != null && customer.getCustomerId() != null) {
             return ResponseEntity.ok(customer);
         } else {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.notFound().build(); 
         }
     }
 

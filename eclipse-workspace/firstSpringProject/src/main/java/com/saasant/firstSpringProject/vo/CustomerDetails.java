@@ -1,5 +1,10 @@
 package com.saasant.firstSpringProject.vo;
 
+
+
+import org.springframework.stereotype.Component;
+
+@Component
 public class CustomerDetails
 {
 

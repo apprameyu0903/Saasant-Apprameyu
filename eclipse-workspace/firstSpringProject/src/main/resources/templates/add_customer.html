@@ -48,8 +48,7 @@
 
                 <div class="form-actions">
                     <button type="submit" class="submit-btn">Add Customer</button>
-                    <a th:href="@{/customers}" class="cancel-btn-link"><button type="button" class="cancel-btn">Home Page</button></a>
-                    <button type="reset" class="reset-btn">Reset</button>
+                    <a th:href="@{/customers}" class="cancel-btn-link"><button type="button" class="cancel-btn">Home</button></a>
 
                 </div>
             </form>
@@ -64,9 +63,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script th:inline="javascript">
-    /*<![CDATA[*/
-        // API endpoint for customer operations
-        const API_BASE_URL = /*[[@{/api/customers}]]*/ 'http://localhost:8081/api/customers'; // Using Thymeleaf to make it context-aware (optional)
+        const API_BASE_URL = 'http://localhost:8081/api/customers'; 
 
         $(document).ready(function() {
             $('#addCustomerForm').on('submit', function(event) {
@@ -78,7 +75,7 @@
                     customerLocation: $('#customerLocation').val().trim()
                 };
                 if (!customerData.customerId || !customerData.customerName || !customerData.mobileNumber) {
-                    showAlert('Customer ID, Name, and Mobile Number are required.', 'warning'); // Bootstrap 'warning' class
+                    showAlert('Customer ID, Name, and Mobile Number are required.', 'warning'); 
                     return;
                 }
 
@@ -91,85 +88,39 @@
                     dataType: 'json',
                     success: function(response, textStatus, jqXHR) {
                         console.log("Customer added successfully:", response);
-                        // Assuming response has customerName
-                        showAlert('Customer "' + (response.customerName || customerData.customerName) + '" added successfully!', 'success'); // Bootstrap 'success'
+                        showAlert('Customer "' + (response.customerName || customerData.customerName) + '" added successfully!', 'success');
                         $('#addCustomerForm')[0].reset();
                         $('#customerId').focus();
-                         // Optionally redirect or update UI further
-                        // window.location.href = /*[[@{/customers}]]*/ '/customers'; // Example redirect
                     },
                     error: function(jqXHR, textStatus, errorThrown) {
-                        console.error("Error adding customer:", jqXHR.status, jqXHR.responseText, errorThrown);
+                        console.error("Error adding customer:", errorThrown);
                         let errorMessage = 'Error adding customer. Please try again.';
-                        if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
-                            errorMessage = jqXHR.responseJSON.message;
-                        } else if (jqXHR.status === 400) { // Bad Request
-                            try {
-                                const errData = JSON.parse(jqXHR.responseText);
-                                if(errData && errData.message) {
-                                    errorMessage = errData.message;
-                                } else if (errData && typeof errData === 'object') { // Handle Spring Validation errors (often an object)
-                                    let messages = [];
-                                    for (const key in errData) {
-                                        if (errData.hasOwnProperty(key) && Array.isArray(errData[key])) {
-                                            messages = messages.concat(errData[key]);
-                                        } else if (errData.hasOwnProperty(key) && typeof errData[key] === 'string'){
-                                            messages.push(errData[key]);
-                                        }
-                                    }
-                                    errorMessage = messages.length > 0 ? messages.join('; ') : "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
-                                }
-                                else {
-                                     errorMessage = "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
-                                }
-                            } catch(e) {
-                                // Fallback if responseText is not JSON or badly formed
-                                if(jqXHR.responseText && jqXHR.responseText.length < 200) { // Show short plain text errors
-                                    errorMessage = "Error (400): " + jqXHR.responseText;
-                                } else {
-                                    errorMessage = "Invalid data submitted (400). Please check your input. The Customer ID might already exist.";
-                                }
-                            }
-                        } else if (jqXHR.status === 409) { // Conflict (e.g., ID already exists)
-                             errorMessage = "Customer ID already exists. Please use a different ID.";
-                             if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
-                                 errorMessage = jqXHR.responseJSON.message;
-                             }
-                        } else if (jqXHR.status === 0) {
-                            errorMessage = 'Cannot connect to the server. Please check your network connection or if the server is running.';
-                        } else if (jqXHR.statusText) {
-                            errorMessage = 'Error: ' + jqXHR.statusText + ' (Status: ' + jqXHR.status + ')';
-                        }
-                        showAlert(errorMessage, 'danger'); // Bootstrap 'danger'
+                        showAlert(errorMessage, 'danger'); 
                     }
                 });
             });
         });
 
         function showAlert(messageText, alertType) {
-            // Ensure #alertPlaceholder exists and is visible
             const alertBoxArea = $("#alertPlaceholder");
             if (!alertBoxArea.length) {
                 console.error("Alert placeholder not found in DOM!");
-                // Fallback to standard alert if placeholder is missing
                 alert(alertType.toUpperCase() + ": " + messageText);
                 return;
             }
-            alertBoxArea.html(''); // Clear previous alerts
+            alertBoxArea.html(''); 
             const newAlertHtml =
-                // Using Bootstrap alert classes
+
                 `<div class="alert alert-${alertType} alert-dismissible fade show" role="alert">
                     ${messageText}
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </div>`;
             alertBoxArea.html(newAlertHtml);
-
-            // Auto-dismiss after 5 seconds
             setTimeout(function() {
                 alertBoxArea.find(".alert").fadeOut("slow", function() { $(this).remove(); });
             }, 5000);
         }
-    /*]]>*/
+
     </script>
 
 </body>
