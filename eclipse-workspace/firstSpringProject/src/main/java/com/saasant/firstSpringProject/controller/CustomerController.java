@@ -3,7 +3,7 @@ package com.saasant.firstSpringProject.controller;
 import com.saasant.firstSpringProject.exception.CustomerNotFoundException;
 import com.saasant.firstSpringProject.service.CustomerServiceInterface;
 import com.saasant.firstSpringProject.vo.CustomerDetails;
-
+import com.saasant.firstSpringProject.entity.Customers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,6 @@ public class CustomerController {
 	@Autowired
 	private CustomerServiceInterface customerService;
 	
-	@Autowired
 	private CustomerDetails customer;
 
     @GetMapping("/{customerId}")
@@ -40,16 +39,16 @@ public class CustomerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CustomerDetails>> getAllOrSearchCustomers(@RequestParam(name = "query", required = false) String searchQuery) {
+    public ResponseEntity<List<Customers>> getAllOrSearchCustomers(@RequestParam(name = "query", required = false) String searchQuery) {
         log.info("API: Request to get customers. Query: '{}'", searchQuery);
-        List<CustomerDetails> customers;
-        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+        List<Customers> customers;
+        /*if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             customers = customerService.searchCustomers(searchQuery.trim());
             log.debug("API: Returning {} customers based on search query: '{}'", customers.size(), searchQuery);
-        } else {
-            customers = customerService.getAllCustomers();
-            log.debug("API: Returning all {} customers (no query).", customers.size());
-        }
+        } else {*/
+        customers = customerService.getAllCustomers();
+        log.debug("API: Returning all {} customers (no query).", customers.size());
+        //}
         return ResponseEntity.ok(customers);
     }
     

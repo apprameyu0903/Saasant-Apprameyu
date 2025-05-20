@@ -1,5 +1,6 @@
 package com.saasant.firstSpringProject.service;
 import com.saasant.firstSpringProject.vo.CustomerDetails;
+import com.saasant.firstSpringProject.entity.Customers;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.saasant.firstSpringProject.FirstSpringProjectApplication;
 import com.saasant.firstSpringProject.dao.CustomerDaoInterface;
 import com.saasant.firstSpringProject.exception.CustomerNotFoundException;
+import com.saasant.firstSpringProject.repo.CustomerRepository;
 
 @Service
 public class CustomerService implements CustomerServiceInterface {
@@ -21,6 +23,9 @@ public class CustomerService implements CustomerServiceInterface {
 	public CustomerService(CustomerDaoInterface customerDao){
 		this.customerDao = customerDao;
 	}
+	
+	@Autowired
+	CustomerRepository customerRepository;
 	
 	@Override
 	public CustomerDetails addCustomer(CustomerDetails customer) {
@@ -88,14 +93,19 @@ public class CustomerService implements CustomerServiceInterface {
             System.out.println("Failed to delete customer or customer not found: " + customerId);
         }
 	}
-
+	
 	@Override
-	public List<CustomerDetails> getAllCustomers() {
+	public List<Customers> getAllCustomers(){
+		return customerRepository.findAll();
+	}
+
+	//@Override
+	/*public List<CustomerDetails> getAllCustomers() {
 		log.info("Fetching all customers.");
 		List<CustomerDetails> customers = customerDao.getAllCustomers();
 		log.debug("Found {} customers.", customers.size());
 		return customers;
-	}
+	}*/
 
 	@Override
 	public CustomerDetails getCustomerById(String customerId) {
@@ -120,4 +130,5 @@ public class CustomerService implements CustomerServiceInterface {
         log.debug("Service: Found {} customers for query: '{}'", customers.size(), query);
         return customers;
     }
+
 }

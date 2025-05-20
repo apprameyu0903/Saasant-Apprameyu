@@ -1,5 +1,6 @@
 package com.saasant.firstSpringProject.dao;
 import com.saasant.firstSpringProject.vo.CustomerDetails;
+import com.saasant.firstSpringProject.entity.Customers;
 import java.util.List;
 public interface CustomerDaoInterface {
 	

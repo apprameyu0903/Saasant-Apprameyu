@@ -182,9 +182,10 @@
         const tableBodyElement = $("#customerTable tbody");
         tableBodyElement.empty();
         $("#noResultsRowWrapper").hide();
-
+		console.log(customersList)
         if (customersList && customersList.length > 0) {
             customersList.forEach(function(oneCustomer, index) {
+            	console.log(oneCustomer)
                 const displayId = oneCustomer.customerId !== null && oneCustomer.customerId !== undefined ? oneCustomer.customerId : 'N/A';
                 const displayName = oneCustomer.customerName || 'N/A';
                 const displayMobile = oneCustomer.mobileNumber || 'N/A';

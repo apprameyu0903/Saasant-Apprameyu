@@ -3,6 +3,7 @@ package com.saasant.firstSpringProject.service;
 import java.util.List;
 
 import com.saasant.firstSpringProject.vo.CustomerDetails;
+import com.saasant.firstSpringProject.entity.Customers;
 
 public interface CustomerServiceInterface {
 	
@@ -10,7 +11,7 @@ public interface CustomerServiceInterface {
 	CustomerDetails updateCustomer(String customerId, CustomerDetails customer);
 	void deleteCustomer(String customerId);
 	CustomerDetails getCustomerById(String CustomerId);
-	List<CustomerDetails> getAllCustomers();
+	List<Customers> getAllCustomers();
 	List<CustomerDetails> searchCustomers(String query);
 
 }
