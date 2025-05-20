@@ -3,7 +3,6 @@ package com.saasant.firstSpringProject.controller;
 import com.saasant.firstSpringProject.exception.CustomerNotFoundException;
 import com.saasant.firstSpringProject.service.CustomerServiceInterface;
 import com.saasant.firstSpringProject.vo.CustomerDetails;
-import com.saasant.firstSpringProject.entity.Customers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,81 +14,62 @@ import java.util.List;
 
 @CrossOrigin
 @RestController
-@RequestMapping("/api/customers") 
+@RequestMapping("/api/customers")
 public class CustomerController {
-	
-	private static final Logger log = LoggerFactory.getLogger(CustomerController.class);
 
-	@Autowired
-	private CustomerServiceInterface customerService;
-	
-	private CustomerDetails customer;
+    private static final Logger log = LoggerFactory.getLogger(CustomerController.class);
+
+    @Autowired
+    private CustomerServiceInterface customerService;
 
     @GetMapping("/{customerId}")
     public ResponseEntity<CustomerDetails> getCustomerById(@PathVariable String customerId) {
-    	log.info("API: Request to get customer by ID: {}", customerId);
-        customer = customerService.getCustomerById(customerId);
-        if (customer != null && customer.getCustomerId() != null) {
-        	log.debug("API: Customer found: {}", customerId);
-            return ResponseEntity.ok(customer);
-        } else {
-        	log.warn("API: Customer not found for ID: {}", customerId);
-        	throw new CustomerNotFoundException(customerId);
-        }
+        log.info("API: Request to get customer by ID: {}", customerId);
+        CustomerDetails customer = customerService.getCustomerById(customerId);
+        log.debug("API: Customer found: {}", customerId);
+        return ResponseEntity.ok(customer);
     }
 
     @GetMapping
-    public ResponseEntity<List<Customers>> getAllOrSearchCustomers(@RequestParam(name = "query", required = false) String searchQuery) {
-        log.info("API: Request to get customers. Query: '{}'", searchQuery);
-        List<Customers> customers;
-        /*if (searchQuery != null && !searchQuery.trim().isEmpty()) {
-            customers = customerService.searchCustomers(searchQuery.trim());
-            log.debug("API: Returning {} customers based on search query: '{}'", customers.size(), searchQuery);
-        } else {*/
-        customers = customerService.getAllCustomers();
-        log.debug("API: Returning all {} customers (no query).", customers.size());
-        //}
+    public ResponseEntity<List<CustomerDetails>> getAllCustomers() {
+        log.info("API: Request to get all customers.");
+        List<CustomerDetails> customers = customerService.getAllCustomers();
+        log.debug("API: Returning all {} customers.", customers.size());
         return ResponseEntity.ok(customers);
     }
-    
+
     @PostMapping
     public ResponseEntity<CustomerDetails> addCustomer(@RequestBody CustomerDetails customerDetails) {
-    	log.info("API: Request to add new customer: {}", customerDetails.getCustomerId());
+        log.info("API: Request to add new customer: {}", customerDetails.getCustomerId());
         CustomerDetails newCustomer = customerService.addCustomer(customerDetails);
         if (newCustomer != null && newCustomer.getCustomerId() != null) {
-        	log.info("API: Customer added successfully with ID: {}", newCustomer.getCustomerId());
+            log.info("API: Customer added successfully with ID: {}", newCustomer.getCustomerId());
             return ResponseEntity.status(HttpStatus.CREATED).body(newCustomer);
         } else {
-        	log.warn("API: Failed to add customer. Input: {}", customerDetails.getCustomerId());
+            log.warn("API: Failed to add customer. Input: {}", customerDetails.getCustomerId());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
-
     @PutMapping("/{customerId}")
     public ResponseEntity<CustomerDetails> updateCustomer(@PathVariable String customerId, @RequestBody CustomerDetails customerDetails) {
-    	log.info("API: Request to update customer with ID: {}", customerId);
+        log.info("API: Request to update customer with ID: {}", customerId);
+        customerDetails.setCustomerId(customerId);
         CustomerDetails updatedCustomer = customerService.updateCustomer(customerId, customerDetails);
         if (updatedCustomer != null) {
-        	log.info("API: Customer updated successfully: {}", customerId);
+            log.info("API: Customer updated successfully: {}", customerId);
             return ResponseEntity.ok(updatedCustomer);
         } else {
-        	log.warn("API: Failed to update customer or customer not found: {}", customerId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); 
+            log.warn("API: Failed to update customer (other than not found): {}", customerId);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     @DeleteMapping("/{customerId}")
     public ResponseEntity<String> deleteCustomer(@PathVariable String customerId) {
-    	log.info("API: Request to delete customer with ID: {}", customerId);
-        CustomerDetails existingCustomer = customerService.getCustomerById(customerId);
-        if (existingCustomer == null) {
-        	log.warn("API: Customer not found for deletion: {}", customerId);
-        	throw new CustomerNotFoundException(customerId);
-        }
-        
+        log.info("API: Request to delete customer with ID: {}", customerId);
         customerService.deleteCustomer(customerId);
         log.info("API: Customer deletion processed for ID: {}", customerId);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(customerId + "Deleted");
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body("Customer with ID " + customerId + " deleted successfully.");
     }
 }

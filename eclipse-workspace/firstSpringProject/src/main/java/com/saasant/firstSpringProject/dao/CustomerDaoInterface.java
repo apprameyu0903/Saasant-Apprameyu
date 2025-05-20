@@ -9,6 +9,5 @@ public interface CustomerDaoInterface {
 	boolean updateCustomer(CustomerDetails customer);
 	boolean deleteCustomer(String customerId);
 	List<CustomerDetails> getAllCustomers();
-	List<CustomerDetails> searchCustomers(String searchTerm);
 
 }

@@ -6,5 +6,4 @@ import com.saasant.firstSpringProject.entity.Customers;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customers, String> {
-	
 }

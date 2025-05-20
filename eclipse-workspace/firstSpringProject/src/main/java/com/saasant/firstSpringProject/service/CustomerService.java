@@ -1,6 +1,6 @@
 package com.saasant.firstSpringProject.service;
 import com.saasant.firstSpringProject.vo.CustomerDetails;
-import com.saasant.firstSpringProject.entity.Customers;
+// import com.saasant.firstSpringProject.entity.Customers; // Not directly used now
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import com.saasant.firstSpringProject.FirstSpringProjectApplication;
 import com.saasant.firstSpringProject.dao.CustomerDaoInterface;
 import com.saasant.firstSpringProject.exception.CustomerNotFoundException;
-import com.saasant.firstSpringProject.repo.CustomerRepository;
 
 @Service
 public class CustomerService implements CustomerServiceInterface {
@@ -20,115 +19,91 @@ public class CustomerService implements CustomerServiceInterface {
 	private static final Logger log = LoggerFactory.getLogger(FirstSpringProjectApplication.class);
 	
 	@Autowired
-	public CustomerService(CustomerDaoInterface customerDao){
+	public CustomerService(CustomerDaoInterface customerDao){ // Constructor injection for DAO
 		this.customerDao = customerDao;
 	}
 	
-	@Autowired
-	CustomerRepository customerRepository;
-	
 	@Override
 	public CustomerDetails addCustomer(CustomerDetails customer) {
-		log.info("Attempting to add customer: {}", customer != null ? customer.getCustomerId() : "null");
+		log.info("SERVICE: Attempting to add customer: {}", customer != null ? customer.getCustomerId() : "null");
 		if (customer == null || customer.getCustomerId() == null || customer.getCustomerId().trim().isEmpty()) {
-			log.warn("Customer or Customer ID cannot be null or empty.");
-			System.out.println("❌ Customer or Customer ID cannot be null or empty.");
 			return null;
 		}
-		boolean success = customerDao.addCustomer(customer);
+		boolean success = customerDao.addCustomer(customer); // Calls DAO
 		if(success) {
-			return customerDao.getCustomerById(customer.getCustomerId());
+		    log.info("SERVICE: Customer {} added successfully via DAO.", customer.getCustomerId());
+			return customerDao.getCustomerById(customer.getCustomerId()); // Fetch the added customer details
 		}
-		log.error("Failed to add customer using DAO: {}", customer.getCustomerId());
-		System.out.println("Failed to add customer: " + customer.getCustomerId());
+		log.error("SERVICE: Failed to add customer using DAO: {}", customer.getCustomerId());
 		return null;
 	}
 
 	@Override
 	public CustomerDetails updateCustomer(String customerId, CustomerDetails customerUpdates) {
-		log.info("Attempting to update customer with ID: {}", customerId);
+		log.info("SERVICE: Attempting to update customer with ID: {}", customerId);
 		if (customerId == null || customerId.trim().isEmpty() || customerUpdates == null) {
-            System.out.println("Customer ID for update or customer data cannot be null or empty.");
-            return null;
+            log.warn("SERVICE: Customer ID for update or customer data cannot be null or empty.");
+            return null; // Or throw IllegalArgumentException
         }
 		
-        CustomerDetails existingCustomer = customerDao.getCustomerById(customerId);
+        CustomerDetails existingCustomer = customerDao.getCustomerById(customerId); // Check existence via DAO
         if (existingCustomer == null) {
-        	log.warn("Customer not found with ID: {}. Cannot update.", customerId);
-            System.out.println("Customer not found with ID: " + customerId + ". Cannot update.");
+        	log.warn("SERVICE: Customer not found with ID: {}. Cannot update.", customerId);
             throw new CustomerNotFoundException(customerId);
         }
 
-        customerUpdates.setCustomerId(customerId); 
+        customerUpdates.setCustomerId(customerId); // Ensure ID is set for the update object
         
-        boolean success = customerDao.updateCustomer(customerUpdates);
+        boolean success = customerDao.updateCustomer(customerUpdates); // Calls DAO
         if (success) {
-        	log.info("✅ Customer updated successfully");
-        	return customerDao.getCustomerById(customerId);
+        	log.info("SERVICE: Customer {} updated successfully via DAO.", customerId);
+        	return customerDao.getCustomerById(customerId); // Return updated details
         }
-        log.error("Failed to update customer using DAO: {}", customerId);
-        System.out.println("Failed to update customer: " + customerId);
+        log.error("SERVICE: Failed to update customer using DAO: {}", customerId);
         return null;
 	}
 
 	@Override
 	public void deleteCustomer(String customerId) {
-		log.info("Attempting to delete customer with ID: {}", customerId);
+		log.info("SERVICE: Attempting to delete customer with ID: {}", customerId);
 		if (customerId == null || customerId.trim().isEmpty()) {
-			log.warn("Customer ID for deletion cannot be null or empty.");
-            System.out.println("Customer ID for deletion cannot be null or empty.");
-            return;
+			log.warn("SERVICE: Customer ID for deletion cannot be null or empty.");
+            return; // Or throw IllegalArgumentException
         }
 		
-		CustomerDetails existingCustomer = customerDao.getCustomerById(customerId); 
+		CustomerDetails existingCustomer = customerDao.getCustomerById(customerId); // Check existence via DAO
         if (existingCustomer == null) {
-            log.warn("Customer not found with ID: {}. Cannot delete.", customerId);
+            log.warn("SERVICE: Customer not found with ID: {}. Cannot delete.", customerId);
             throw new CustomerNotFoundException(customerId);
         }
-        if (customerDao.deleteCustomer(customerId)) {
-        	log.info("Customer deleted successfully: {}", customerId);
-            System.out.println("✅ Customer deleted successfully: " + customerId);
+        if (customerDao.deleteCustomer(customerId)) { // Calls DAO
+        	log.info("SERVICE: Customer {} deleted successfully via DAO.", customerId);
         } else {
-        	log.warn("Failed to delete customer or customer not found with ID: {}", customerId);
-            System.out.println("Failed to delete customer or customer not found: " + customerId);
+        	log.warn("SERVICE: Failed to delete customer or customer not found with ID {} via DAO.", customerId);
         }
 	}
 	
 	@Override
-	public List<Customers> getAllCustomers(){
-		return customerRepository.findAll();
-	}
-
-	//@Override
-	/*public List<CustomerDetails> getAllCustomers() {
-		log.info("Fetching all customers.");
-		List<CustomerDetails> customers = customerDao.getAllCustomers();
-		log.debug("Found {} customers.", customers.size());
+	public List<CustomerDetails> getAllCustomers(){ // Return type changed
+		log.info("SERVICE: Fetching all customers via DAO.");
+		List<CustomerDetails> customers = customerDao.getAllCustomers(); // Calls DAO
+		log.debug("SERVICE: Found {} customers.", customers.size());
 		return customers;
-	}*/
+	}
 
 	@Override
 	public CustomerDetails getCustomerById(String customerId) {
-		log.info("Fetching customer by ID: {}", customerId);
+		log.info("SERVICE: Fetching customer by ID: {}", customerId);
 		 if (customerId == null || customerId.trim().isEmpty()) {
-			 log.warn("Customer ID for retrieval cannot be null or empty.");
-            System.out.println("Customer ID for retrieval cannot be null or empty.");
-            return null;
+			 log.warn("SERVICE: Customer ID for retrieval cannot be null or empty.");
+            return null; // Or throw IllegalArgumentException
         }
-		CustomerDetails customer = customerDao.getCustomerById(customerId);
+		CustomerDetails customer = customerDao.getCustomerById(customerId); // Calls DAO
 		if(customer == null) {
-			log.warn("No customer founud with ID: {}",customerId);
+			log.warn("SERVICE: No customer found with ID: {}",customerId);
 			throw new CustomerNotFoundException(customerId);
 		}
 		return customer;
 	}
 	
-	@Override
-    public List<CustomerDetails> searchCustomers(String query) {
-        log.info("Service: Searching customers with query: '{}'", query);
-        List<CustomerDetails> customers = customerDao.searchCustomers(query);
-        log.debug("Service: Found {} customers for query: '{}'", customers.size(), query);
-        return customers;
-    }
-
 }
