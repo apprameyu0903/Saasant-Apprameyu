@@ -51,7 +51,7 @@ public class CustomerService implements CustomerServiceInterface {
         if (existingCustomer == null) {
         	log.warn("Customer not found with ID: {}. Cannot update.", customerId);
             System.out.println("Customer not found with ID: " + customerId + ". Cannot update.");
-            throw new CustomerNotFoundException("Customer not found with id: " + customerId);
+            throw new CustomerNotFoundException(customerId);
         }
 
         customerUpdates.setCustomerId(customerId); 
@@ -78,7 +78,7 @@ public class CustomerService implements CustomerServiceInterface {
 		CustomerDetails existingCustomer = customerDao.getCustomerById(customerId); 
         if (existingCustomer == null) {
             log.warn("Customer not found with ID: {}. Cannot delete.", customerId);
-            throw new CustomerNotFoundException("Customer not found with ID: " + customerId + ". Cannot delete.");
+            throw new CustomerNotFoundException(customerId);
         }
         if (customerDao.deleteCustomer(customerId)) {
         	log.info("Customer deleted successfully: {}", customerId);
@@ -108,7 +108,7 @@ public class CustomerService implements CustomerServiceInterface {
 		CustomerDetails customer = customerDao.getCustomerById(customerId);
 		if(customer == null) {
 			log.warn("No customer founud with ID: {}",customerId);
-			throw new CustomerNotFoundException("Customer not found with ID: " + customerId + ". Cannot delete.");
+			throw new CustomerNotFoundException(customerId);
 		}
 		return customer;
 	}

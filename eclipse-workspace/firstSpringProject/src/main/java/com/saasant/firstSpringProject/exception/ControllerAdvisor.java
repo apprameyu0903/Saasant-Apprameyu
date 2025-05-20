@@ -20,7 +20,6 @@ public class ControllerAdvisor {
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.NOT_FOUND.value());
         body.put("error", "Not Found");
-
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 	

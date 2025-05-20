@@ -75,6 +75,7 @@
 	<section name="MavenProjectImportWizardPage">
 		<list key="rootDirectory">
 			<item value="/Users/apprameyubharath/Saasant-Apprameyu/eclipse-workspace/firstSpringProject"/>
+			<item value="/Users/apprameyubharath/Downloads/firstSpringProject"/>
 		</list>
 		<list key="projectNameTemplate">
 			<item value="[artifactId]"/>

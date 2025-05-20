@@ -12,7 +12,6 @@
     <fullyQualifiedTypeName name="com.dao.CustomerDaoInterface"/>
     <fullyQualifiedTypeName name="com.saasant.firstSpringProject.util.DBUtil"/>
     <fullyQualifiedTypeName name="com.saasant.firstSpringProject.dao.CustomerDao"/>
-    <fullyQualifiedTypeName name="com.saasant.firstSpringProject.vo.CustomerDetails"/>
     <fullyQualifiedTypeName name="com.saasant.firstSpringProject.vo.ProductInfo"/>
     <fullyQualifiedTypeName name="org.springframework.web.bind.annotation.CrossOrigin"/>
     <fullyQualifiedTypeName name="org.springframework.stereotype.Repository"/>
@@ -20,4 +19,15 @@
     <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
     <fullyQualifiedTypeName name="java.beans.JavaBean"/>
     <fullyQualifiedTypeName name="org.springframework.stereotype.Component"/>
+    <fullyQualifiedTypeName name="org.springframework.web.bind.annotation.ControllerAdvice"/>
+    <fullyQualifiedTypeName name="org.springframework.web.bind.annotation.ExceptionHandler"/>
+    <fullyQualifiedTypeName name="org.springframework.http.ResponseEntity"/>
+    <fullyQualifiedTypeName name="org.springframework.web.context.request.WebRequest"/>
+    <fullyQualifiedTypeName name="java.util.LinkedHashMap"/>
+    <fullyQualifiedTypeName name="java.util.Map"/>
+    <fullyQualifiedTypeName name="java.time.LocalDateTime"/>
+    <fullyQualifiedTypeName name="org.springframework.http.HttpStatus"/>
+    <fullyQualifiedTypeName name="java.lang.RuntimeException"/>
+    <fullyQualifiedTypeName name="com.saasant.firstSpringProject.vo.CustomerDetails"/>
+    <fullyQualifiedTypeName name="com.saasant.firstSpringProject.exception.CustomerNotFoundException"/>
 </qualifiedTypeNameHistroy>

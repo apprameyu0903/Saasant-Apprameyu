@@ -1,5 +1,6 @@
 package com.saasant.firstSpringProject.controller;
 
+import com.saasant.firstSpringProject.exception.CustomerNotFoundException;
 import com.saasant.firstSpringProject.service.CustomerServiceInterface;
 import com.saasant.firstSpringProject.vo.CustomerDetails;
 
@@ -34,7 +35,7 @@ public class CustomerController {
             return ResponseEntity.ok(customer);
         } else {
         	log.warn("API: Customer not found for ID: {}", customerId);
-            return ResponseEntity.notFound().build(); 
+        	throw new CustomerNotFoundException(customerId);
         }
     }
 
@@ -85,11 +86,11 @@ public class CustomerController {
         CustomerDetails existingCustomer = customerService.getCustomerById(customerId);
         if (existingCustomer == null) {
         	log.warn("API: Customer not found for deletion: {}", customerId);
-            return ResponseEntity.notFound().build();
+        	throw new CustomerNotFoundException(customerId);
         }
         
         customerService.deleteCustomer(customerId);
         log.info("API: Customer deletion processed for ID: {}", customerId);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(customerId + "Deleted");
     }
 }

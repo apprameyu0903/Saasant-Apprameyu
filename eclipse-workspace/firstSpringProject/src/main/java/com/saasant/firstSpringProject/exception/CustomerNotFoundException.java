@@ -8,8 +8,8 @@ public class CustomerNotFoundException extends RuntimeException {
 	
 	private static final long serialVersionUID = 1L;
 
-    public CustomerNotFoundException(String message) {
-        super();
+    public CustomerNotFoundException(String id) {
+        super(String.format("Customer with Id %s not found", id));
     }
 
 }
