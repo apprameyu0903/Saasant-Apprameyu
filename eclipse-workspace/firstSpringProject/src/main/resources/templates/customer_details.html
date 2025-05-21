@@ -5,6 +5,7 @@
     <title>Customer List</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap4.min.css">
 </head>
 <body>
 
@@ -101,6 +102,8 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/2.3.1/js/dataTables.min.js"></script>
+    
 
     <script th:inline="javascript">
     const API_BASE_URL = 'http://localhost:8081/api/customers';
@@ -149,6 +152,35 @@
         const searchInputValue = $("#customerSearchInput").val().trim().toLowerCase();
         getAndShowCustomers(searchInputValue); 
     }
+    
+    /*customerDataTable = $('#customerTable').DataTable({
+        "processing": true,
+        "ajax": {
+            "url": API_BASE_URL, // Your API endpoint
+            "type": "GET",
+            "dataSrc": "", // Assumes your API returns a flat array of customers
+            "error": function(xhr) 
+        },
+        "columns": [
+            { "data": "customerId", "defaultContent": "N/A" },
+            { "data": "customerName", "defaultContent": "N/A" },
+            { "data": "mobileNumber", "defaultContent": "N/A" },
+            { "data": "customerLocation", "defaultContent": "N/A" },
+            {
+                "data": null,
+                "orderable": false,
+                "searchable": false,
+                "render": function(data, type, row) {
+                    // Returns HTML for Edit/Delete buttons with correct data-id
+                    const customerId = row.customerId;
+                    let editLink = `<a class="action-link edit-link text-primary mr-2" href="#" data-id="${customerId}">Edit</a>`;
+                    let deleteLink = `<a class="action-link delete-link text-danger" href="#" data-id="${customerId}">Delete</a>`;
+                    return editLink + ' ' + deleteLink;
+                }
+            }
+        ],
+    });*/
+
 
     function getAndShowCustomers(searchText) {
         let ajaxData = {};
@@ -177,7 +209,9 @@
             }
         });
     }
+	
 
+    
     function fillCustomerTable(customersList) {
         const tableBodyElement = $("#customerTable tbody");
         tableBodyElement.empty();

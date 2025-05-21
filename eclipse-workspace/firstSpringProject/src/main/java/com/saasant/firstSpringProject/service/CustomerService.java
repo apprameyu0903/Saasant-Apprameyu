@@ -43,7 +43,7 @@ public class CustomerService implements CustomerServiceInterface {
 		log.info("SERVICE: Attempting to update customer with ID: {}", customerId);
 		if (customerId == null || customerId.trim().isEmpty() || customerUpdates == null) {
             log.warn("SERVICE: Customer ID for update or customer data cannot be null or empty.");
-            return null; // Or throw IllegalArgumentException
+            return null; 
         }
 		
         CustomerDetails existingCustomer = customerDao.getCustomerById(customerId); // Check existence via DAO
@@ -84,7 +84,7 @@ public class CustomerService implements CustomerServiceInterface {
 	}
 	
 	@Override
-	public List<CustomerDetails> getAllCustomers(){ // Return type changed
+	public List<CustomerDetails> getAllCustomers(){ 
 		log.info("SERVICE: Fetching all customers via DAO.");
 		List<CustomerDetails> customers = customerDao.getAllCustomers(); // Calls DAO
 		log.debug("SERVICE: Found {} customers.", customers.size());

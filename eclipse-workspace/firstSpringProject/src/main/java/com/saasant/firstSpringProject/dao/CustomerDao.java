@@ -13,7 +13,7 @@ import com.saasant.firstSpringProject.entity.Customers;
 import com.saasant.firstSpringProject.repo.CustomerRepository;
 import com.saasant.firstSpringProject.vo.CustomerDetails;
 
-@Repository // Typically DAO components are annotated with @Repository
+@Repository 
 public class CustomerDao implements CustomerDaoInterface {
 
     private static final Logger log = LoggerFactory.getLogger(CustomerDao.class);
@@ -26,11 +26,7 @@ public class CustomerDao implements CustomerDaoInterface {
         if (customerEntity == null) {
             return null;
         }
-        return new CustomerDetails(
-                customerEntity.getCustomerId(),
-                customerEntity.getCustomerName(),
-                customerEntity.getCustomerMobile(),
-                customerEntity.getCustomerLocation());
+        return new CustomerDetails(customerEntity.getCustomerId(),customerEntity.getCustomerName(),customerEntity.getCustomerMobile(),customerEntity.getCustomerLocation());
     }
 
     // Helper method to convert VO to Entity
@@ -62,10 +58,10 @@ public class CustomerDao implements CustomerDaoInterface {
     @Override
     public CustomerDetails getCustomerById(String customerId) {
         log.debug("DAO: Fetching customer by ID: {} via repository", customerId);
-        Optional<Customers> customerEntityOptional = customerRepository.findById(customerId);
-        if (customerEntityOptional.isPresent()) {
+        Customers customerEntity = customerRepository.findById(customerId).orElse(null);
+        if (customerEntity != null) {
             log.debug("DAO: Customer found for ID: {}", customerId);
-            return convertToDetails(customerEntityOptional.get());
+            return convertToDetails(customerEntity);
         } else {
             log.debug("DAO: No customer found for ID: {}", customerId);
             return null;
