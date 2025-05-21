@@ -96,7 +96,7 @@ public class CustomerService implements CustomerServiceInterface {
 		log.info("SERVICE: Fetching customer by ID: {}", customerId);
 		 if (customerId == null || customerId.trim().isEmpty()) {
 			 log.warn("SERVICE: Customer ID for retrieval cannot be null or empty.");
-            return null; // Or throw IllegalArgumentException
+            return null;
         }
 		CustomerDetails customer = customerDao.getCustomerById(customerId); // Calls DAO
 		if(customer == null) {

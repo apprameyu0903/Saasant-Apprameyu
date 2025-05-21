@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${employee.empId} != null ? 'Edit Employee' : 'Add Employee'"></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="text-end">
+            <a th:href="@{/employees}" class="btn btn-sm btn-light">View All Employees</a>
+        </div>
+
+        <div class="form-container">
+            <h2 th:text="${employee.empId} != null ? 'Edit Employee' : 'Add Employee'"></h2>
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+            <!-- EDIT MODE -->
+            <div th:if="${employee.empId} != null">
+                <form th:object="${employee}" th:action="@{/employees/update}" method="post" onsubmit="return validateForm()">
+                    <input type="hidden" th:field="*{empId}" />
+
+                    <div class="mb-3">
+                        <label for="empName" class="form-label">Employee Name</label>
+                        <input type="text" class="form-control" id="empName" th:field="*{empName}" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="empIdDisplay" class="form-label">Employee ID</label>
+                        <input type="text" readonly class="form-control" id="empIdDisplay" th:value="${employee.empId}" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="position" class="form-label">Position</label>
+                        <select class="form-select" id="position" th:field="*{position}" required>
+                            <option value="">-- Select Position --</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Developer">Developer</option>
+                            <option value="Analyst">Analyst</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" id="phone" th:field="*{phone}" required />
+                        <span id="phoneStatus" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+
+            <!-- ADD MODE -->
+            <div th:if="${employee.empId} == null">
+                <form th:object="${employee}" th:action="@{/employees/save}" method="post" onsubmit="return validateForm()">
+
+                    <div class="mb-3">
+                        <label for="empName" class="form-label">Employee Name</label>
+                        <input type="text" class="form-control" id="empName" th:field="*{empName}" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="empId" class="form-label">Employee ID</label>
+                        <input type="text" class="form-control" id="empId" th:field="*{empId}" required />
+                        <span id="idStatus" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="position" class="form-label">Position</label>
+                        <select class="form-select" id="position" th:field="*{position}" required>
+                            <option value="">-- Select Position --</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Developer">Developer</option>
+                            <option value="Analyst">Analyst</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="text" class="form-control" id="phone" th:field="*{phone}" required />
+                        <span id="phoneStatus" class="text-danger"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function validateForm() {
+            const name = $('#empName').val().trim();
+            const id = $('#empId').length ? $('#empId').val().trim() : '';
+            const pos = $('#position').val();
+            const ph = $('#phone').val().trim();
+
+            if (!/^[A-Za-z ]{2,}$/.test(name)) {
+                alert('Enter a valid name.');
+                return false;
+            }
+            if ($('#empId').length && !/^[0-9]+$/.test(id)) {
+                alert('Employee ID must be numeric.');
+                return false;
+            }
+            if (pos === '') {
+                alert('Select a position.');
+                return false;
+            }
+            if (!/^[0-9]{10}$/.test(ph)) {
+                alert('Phone must be 10 digits.');
+                return false;
+            }
+            return true;
+        }
+
+        // Check ID availability on add mode
+        $('#empId').on('blur', function() {
+            const id = $(this).val().trim();
+            const status = $('#idStatus');
+            const btn = $('button[type="submit"]');
+
+            if (!id) {
+                status.text('');
+                btn.prop('disabled', false);
+                return;
+            }
+            if (!/^[0-9]+$/.test(id)) {
+                status.text('ID must be numeric');
+                btn.prop('disabled', true);
+                return;
+            }
+
+            $.get('/employees/check-id', { empId: id }, function(exists) {
+                if (exists) {
+                    status.text('✖ ID taken');
+                    status.css('color', 'red');
+                    btn.prop('disabled', true);
+                } else {
+                    status.text('✔ ID available');
+                    status.css('color', 'green');
+                    btn.prop('disabled', false);
+                }
+            }).fail(function() {
+                status.text('⚠ Check failed');
+                status.css('color', 'orange');
+                btn.prop('disabled', false);
+            });
+        });
+    </script>
+</body>
+</html>

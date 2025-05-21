@@ -1,5 +1,6 @@
 package com.saasant.firstSpringProject.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -71,10 +72,8 @@ public class CustomerDao implements CustomerDaoInterface {
     @Override
     public boolean updateCustomer(CustomerDetails customerDetails) {
         log.debug("DAO: Attempting to update customer: {} via repository", customerDetails.getCustomerId());
-        Optional<Customers> existingEntityOptional = customerRepository.findById(customerDetails.getCustomerId());
-        if (existingEntityOptional.isPresent()) {
-            Customers existingEntity = existingEntityOptional.get();
-            // Update fields from VO
+        Customers existingEntity = customerRepository.findById(customerDetails.getCustomerId()).orElse(null);
+        if (existingEntity != null) {
             existingEntity.setCustomerName(customerDetails.getCustomerName());
             existingEntity.setCustomerMobile(customerDetails.getMobileNumber());
             existingEntity.setCustomerLocation(customerDetails.getCustomerLocation());
@@ -104,9 +103,10 @@ public class CustomerDao implements CustomerDaoInterface {
     public List<CustomerDetails> getAllCustomers() {
         log.debug("DAO: Fetching all customers via repository.");
         List<Customers> entities = customerRepository.findAll();
-        List<CustomerDetails> detailsList = entities.stream()
-                .map(this::convertToDetails)
-                .collect(Collectors.toList());
+        List<CustomerDetails> detailsList = new ArrayList<>();
+        for(Customers entity : entities) {
+        	detailsList.add(this.convertToDetails(entity));
+        }
         log.debug("DAO: Retrieved {} customers.", detailsList.size());
         return detailsList;
     }
